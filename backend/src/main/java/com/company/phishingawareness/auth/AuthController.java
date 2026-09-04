@@ -1,8 +1,7 @@
 package com.company.phishingawareness.auth;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,16 +16,13 @@ import jakarta.validation.constraints.NotBlank;
 @RequestMapping("/api/v1/auth")
 public class AuthController {
 
-    private final AuthenticationManager authManager;
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
 
-    public AuthController(AuthenticationManager authManager,
-                          UserRepository userRepository,
+    public AuthController(UserRepository userRepository,
                           JwtUtil jwtUtil,
                           PasswordEncoder passwordEncoder) {
-        this.authManager = authManager;
         this.userRepository = userRepository;
         this.jwtUtil = jwtUtil;
         this.passwordEncoder = passwordEncoder;
@@ -46,13 +42,14 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
-        authManager.authenticate(
-            new UsernamePasswordAuthenticationToken(request.username(), request.password())
-        );
+        User user = userRepository.findByUsername(request.username())
+                .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
 
-        User user = userRepository.findByUsername(request.username()).orElseThrow();
+        if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
+            throw new BadCredentialsException("Invalid credentials");
+        }
+
         String token = jwtUtil.generateToken(user.getUsername(), user.getId(), user.getRole().name());
-
         return ResponseEntity.ok(new LoginResponse(token, user.getUsername(), user.getRole().name()));
     }
 
