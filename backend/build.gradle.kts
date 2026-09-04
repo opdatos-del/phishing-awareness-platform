@@ -2,6 +2,14 @@ plugins {
     java
     id("org.springframework.boot") version "4.1.1"
     id("io.spring.dependency-management") version "1.1.7"
+    id("org.flywaydb.flyway") version "12.4.0"
+}
+
+buildscript {
+    dependencies {
+        classpath("org.flywaydb:flyway-mysql:12.4.0")
+        classpath("com.mysql:mysql-connector-j:9.3.0")
+    }
 }
 
 group = "com.company"
@@ -57,4 +65,26 @@ dependencies {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+// --- Flyway CLI tasks (flywayMigrate, flywayInfo, flywayRepair) ---
+// Ejecutan contra MySQL del host. Credenciales desde el .env del monorepo.
+fun envValue(key: String, default: String): String {
+    val envFile = rootProject.file("../.env")
+    if (envFile.exists()) {
+        for (line in envFile.readLines()) {
+            val trimmed = line.trim()
+            if (trimmed.startsWith("$key=")) return trimmed.removePrefix("$key=").trim()
+        }
+    }
+    return System.getenv(key) ?: default
+}
+
+flyway {
+    url = "jdbc:mysql://${envValue("DB_HOST", "localhost")}:${envValue("DB_PORT", "3306")}/" +
+        "${envValue("DB_NAME", "phishing_awareness")}?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC"
+    user = envValue("DB_USERNAME", "phishing_app")
+    password = envValue("DB_PASSWORD", "CHANGE_ME")
+    locations = arrayOf("filesystem:src/main/resources/db/migration")
+    driver = "com.mysql.cj.jdbc.Driver"
 }
