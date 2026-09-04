@@ -34,19 +34,19 @@ Internal phishing simulation platform for employee security awareness training.
 ## Stack
 
 ### Backend
-- Java 21 / Spring Boot 3.4
-- Spring Security + JWT
+- Java 25 LTS / Spring Boot 3.5.16
+- Spring Security + JWT (jjwt 0.13.0)
 - Spring Data JPA + Hibernate
 - Flyway (schema migrations)
 - MySQL
 
 ### Frontend
-- React 19 + TypeScript
-- Vite
-- Tailwind CSS
-- React Router 7
-- TanStack Query
-- Recharts
+- React 19.2 + TypeScript 5.8
+- Vite 8.2
+- Tailwind CSS 4.3
+- React Router 8.3
+- TanStack Query 5.102
+- Recharts 3.10
 
 ### Infrastructure
 - Docker + Docker Compose
@@ -56,8 +56,8 @@ Internal phishing simulation platform for employee security awareness training.
 
 ## Requirements
 
-- Java 21+
-- Node.js 20+
+- Java 25+
+- Node.js 24+
 - Maven 3.9+
 - Docker + Docker Compose
 - MySQL 8.0+ (installed on host)

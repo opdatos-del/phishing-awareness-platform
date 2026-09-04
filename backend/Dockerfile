@@ -1,6 +1,6 @@
 # Multi-stage build for Spring Boot
 # --- Build stage ---
-FROM eclipse-temurin:21-jdk AS build
+FROM eclipse-temurin:25-jdk AS build
 WORKDIR /app
 
 # Cache Maven dependencies
@@ -14,7 +14,7 @@ RUN --mount=type=cache,target=/root/.m2 \
     mvn package -DskipTests -B
 
 # --- Runtime stage ---
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:25-jre
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
