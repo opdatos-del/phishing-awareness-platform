@@ -34,7 +34,8 @@ Internal phishing simulation platform for employee security awareness training.
 ## Stack
 
 ### Backend
-- Java 25 LTS / Spring Boot 3.5.16
+- Java 25 LTS / Spring Boot 4.1.1
+- Gradle 8.14 (Kotlin DSL)
 - Spring Security + JWT (jjwt 0.13.0)
 - Spring Data JPA + Hibernate
 - Flyway (schema migrations)
@@ -58,7 +59,8 @@ Internal phishing simulation platform for employee security awareness training.
 
 - Java 25+
 - Node.js 24+
-- Maven 3.9+
+- pnpm
+- Gradle 8.14+ (or use wrapper)
 - Docker + Docker Compose
 - MySQL 8.0+ (installed on host)
 
@@ -117,7 +119,7 @@ Schema changes are managed via Flyway in:
 backend/src/main/resources/db/migration/
 ```
 
-Run `mvn flyway:migrate` or let Spring Boot handle it on startup.
+Run `./gradlew flywayMigrate` or let Spring Boot handle it on startup.
 
 ## GoPhish
 
@@ -152,12 +154,12 @@ No real emails are sent in dev mode.
 ```bash
 # Backend only (requires MySQL running on host)
 cd backend
-mvn spring-boot:run
+./gradlew bootRun
 
 # Frontend only
 cd frontend
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 ## Testing
@@ -165,11 +167,11 @@ npm run dev
 ```bash
 # Backend tests
 cd backend
-mvn test
+./gradlew test
 
 # Frontend tests
 cd frontend
-npm test
+pnpm test
 ```
 
 ## Roadmap

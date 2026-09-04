@@ -3,13 +3,13 @@
 .env.local
 .env.*.local
 
-# Java / Maven
-backend/target/
+# Java / Gradle
+backend/build/
+backend/.gradle/
 *.class
 *.jar
 *.war
 *.ear
-.mvn/wrapper/maven-wrapper.jar
 dependency-reduced-pom.xml
 
 # IDE
