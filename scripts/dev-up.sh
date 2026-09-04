@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Always run from project root
+cd "$(dirname "$0")/.."
+
 echo "=== Starting Phishing Awareness Platform ==="
 
 # Check if .env exists

@@ -22,8 +22,7 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      gophish:
-        condition: service_healthy
+      - gophish
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
@@ -42,6 +41,8 @@ services:
       dockerfile: Dockerfile
     container_name: paware-frontend
     restart: unless-stopped
+    ports:
+      - "3000:80"
     networks:
       - paware-net
 
@@ -54,7 +55,6 @@ services:
       - "3333:3333"
       - "8081:8080"
     volumes:
-      - ./infrastructure/gophish/config.json:/opt/gophish/config.json
       - ./infrastructure/gophish/data:/opt/gophish/data
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -89,9 +89,6 @@ services:
     image: caddy:latest
     container_name: paware-caddy
     restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
     volumes:
       - ./infrastructure/caddy/Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data

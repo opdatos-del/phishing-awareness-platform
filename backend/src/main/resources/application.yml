@@ -32,10 +32,8 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: false
 
-  # Jackson
+  # Jackson (Jackson 3.x - configure via properties or Java config)
   jackson:
-    serialization:
-      write-dates-as-timestamps: false
     default-property-inclusion: non_null
 
 server:

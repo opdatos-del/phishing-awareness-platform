@@ -52,3 +52,5 @@ logs/
 
 # Flyway
 *.sql.bak
+
+AGENTS.md

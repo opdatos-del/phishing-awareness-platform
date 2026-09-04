@@ -51,9 +51,9 @@ public class AuthController {
         );
 
         User user = userRepository.findByUsername(request.username()).orElseThrow();
-        String token = jwtUtil.generateToken(user.getUsername(), user.getId(), user.role().name());
+        String token = jwtUtil.generateToken(user.getUsername(), user.getId(), user.getRole().name());
 
-        return ResponseEntity.ok(new LoginResponse(token, user.getUsername(), user.role().name()));
+        return ResponseEntity.ok(new LoginResponse(token, user.getUsername(), user.getRole().name()));
     }
 
     public record LoginRequest(

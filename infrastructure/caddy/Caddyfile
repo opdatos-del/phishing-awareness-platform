@@ -1,5 +1,5 @@
 localhost {
-    # Frontend
+    # Frontend assets
     handle /assets/* {
         reverse_proxy frontend:80
     }
@@ -17,13 +17,11 @@ localhost {
 
         # GoPhish admin (dev only)
         handle_path /gophish/* {
-            strip_prefix /gophish
             reverse_proxy gophish:8080
         }
 
         # Mailpit (dev only)
         handle_path /mailpit/* {
-            strip_prefix /mailpit
             reverse_proxy mailpit:8025
         }
 

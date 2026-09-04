@@ -34,7 +34,7 @@ Internal phishing simulation platform for employee security awareness training.
 ## Stack
 
 ### Backend
-- Java 25 LTS / Spring Boot 4.1.1
+- Java 21 LTS / Spring Boot 4.1.1
 - Gradle 8.14 (Kotlin DSL)
 - Spring Security + JWT (jjwt 0.13.0)
 - Spring Data JPA + Hibernate
@@ -57,7 +57,7 @@ Internal phishing simulation platform for employee security awareness training.
 
 ## Requirements
 
-- Java 25+
+- Java 21+
 - Node.js 24+
 - pnpm
 - Gradle 8.14+ (or use wrapper)
