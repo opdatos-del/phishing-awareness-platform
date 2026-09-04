@@ -61,17 +61,53 @@ public class DevDataInitializer {
                 createLandingPage(landingPageRepo, "Login Corporativo Fake",
                     "corporate-login",
                     LandingPage.Category.ACCOUNT, LandingPage.Difficulty.EASY,
-                    "<html><body><h1>Corporate Login</h1><form><input type='email' placeholder='Email'><input type='password' placeholder='Password'><button type='submit'>Login</button></form></body></html>");
+                    "<html><body style='font-family:Arial,sans-serif;margin:0;background:#f0f2f5'>"
+                    + "<div style='max-width:400px;margin:60px auto;background:#fff;padding:30px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.15)'>"
+                    + "<h2 style='margin-top:0;color:#333'>Verificacion de cuenta</h2>"
+                    + "<p style='color:#555'>Su sesion ha expirado. Verifique sus datos para continuar.</p>"
+                    + "<form id='sim-form'>"
+                    + "<input type='text' placeholder='Usuario' value='demo' style='width:100%;padding:10px;margin:8px 0;box-sizing:border-box'>"
+                    + "<input type='password' placeholder='Contrasena' value='********' style='width:100%;padding:10px;margin:8px 0;box-sizing:border-box'>"
+                    + "<button type='submit' style='width:100%;padding:12px;background:#1a73e8;color:#fff;border:none;border-radius:4px;cursor:pointer'>Iniciar sesion</button>"
+                    + "</form></div>"
+                    + "<script>"
+                    + "(function(){var f=document.getElementById('sim-form');f.addEventListener('submit',function(e){e.preventDefault();"
+                    + "fetch('/api/v1/tracking/{{TOKEN}}/submit',{method:'POST'}).then(function(){"
+                    + "window.location.href='/training/{{SLUG}}?token={{TOKEN}}';});});})();"
+                    + "</script></body></html>");
 
                 createLandingPage(landingPageRepo, "OneDrive Document View",
                     "onedrive-document",
                     LandingPage.Category.DOCUMENT, LandingPage.Difficulty.MEDIUM,
-                    "<html><body><h1>OneDrive</h1><p>View Document</p><button>Download</button></body></html>");
+                    "<html><body style='font-family:Arial,sans-serif;margin:0;background:#f0f2f5'>"
+                    + "<div style='max-width:420px;margin:60px auto;background:#fff;padding:30px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.15)'>"
+                    + "<h2 style='margin-top:0;color:#333'>Documento compartido</h2>"
+                    + "<p style='color:#555'>Un usuario compartio un documento contigo en OneDrive.</p>"
+                    + "<button id='sim-form' style='width:100%;padding:12px;background:#28a745;color:#fff;border:none;border-radius:4px;cursor:pointer'>Descargar documento</button>"
+                    + "</div>"
+                    + "<script>"
+                    + "(function(){var f=document.getElementById('sim-form');f.addEventListener('click',function(e){"
+                    + "fetch('/api/v1/tracking/{{TOKEN}}/submit',{method:'POST'}).then(function(){"
+                    + "window.location.href='/training/{{SLUG}}?token={{TOKEN}}';});});})();"
+                    + "</script></body></html>");
 
                 createLandingPage(landingPageRepo, "Security Alert Portal",
                     "security-alert",
                     LandingPage.Category.SECURITY, LandingPage.Difficulty.HARD,
-                    "<html><body><h1>Security Alert</h1><p>Verify your account</p><form><input type='email' placeholder='Email'><input type='password' placeholder='Password'><button type='submit'>Verify</button></form></body></html>");
+                    "<html><body style='font-family:Arial,sans-serif;margin:0;background:#f0f2f5'>"
+                    + "<div style='max-width:400px;margin:60px auto;background:#fff;padding:30px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.15)'>"
+                    + "<h2 style='margin-top:0;color:#d93025'>Alerta de seguridad</h2>"
+                    + "<p style='color:#555'>Detectamos actividad inusual. Verifique su identidad para reactivar la cuenta.</p>"
+                    + "<form id='sim-form'>"
+                    + "<input type='text' placeholder='Usuario' value='demo' style='width:100%;padding:10px;margin:8px 0;box-sizing:border-box'>"
+                    + "<input type='password' placeholder='Contrasena' value='********' style='width:100%;padding:10px;margin:8px 0;box-sizing:border-box'>"
+                    + "<button type='submit' style='width:100%;padding:12px;background:#d93025;color:#fff;border:none;border-radius:4px;cursor:pointer'>Verificar cuenta</button>"
+                    + "</form></div>"
+                    + "<script>"
+                    + "(function(){var f=document.getElementById('sim-form');f.addEventListener('submit',function(e){e.preventDefault();"
+                    + "fetch('/api/v1/tracking/{{TOKEN}}/submit',{method:'POST'}).then(function(){"
+                    + "window.location.href='/training/{{SLUG}}?token={{TOKEN}}';});});})();"
+                    + "</script></body></html>");
             }
         };
     }

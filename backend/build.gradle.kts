@@ -36,7 +36,8 @@ dependencies {
 
     // Database
     runtimeOnly("com.mysql:mysql-connector-j")
-    implementation("org.flywaydb:flyway-core")
+    // Starter necesario en Boot 4: flyway-core solo no activa auto-config
+    implementation("org.springframework.boot:spring-boot-starter-flyway")
     implementation("org.flywaydb:flyway-mysql")
 
     // JWT
