@@ -1,0 +1,112 @@
+services:
+  # ─── Backend ────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: paware-backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=validate
+      - SPRING_FLYWAY_ENABLED=true
+      - JWT_SECRET=${JWT_SECRET}
+      - GOPHISH_API_URL=${GOPHISH_API_URL}
+      - GOPHISH_API_KEY=${GOPHISH_API_KEY}
+      - GOPHISH_URL=${GOPHISH_URL}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+    ports:
+      - "8080:8080"
+    depends_on:
+      gophish:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - paware-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ─── Frontend ───────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: paware-frontend
+    restart: unless-stopped
+    networks:
+      - paware-net
+
+  # ─── GoPhish ────────────────────────────────────────────
+  gophish:
+    image: gophish/gophish:latest
+    container_name: paware-gophish
+    restart: unless-stopped
+    ports:
+      - "3333:3333"
+      - "8081:8080"
+    volumes:
+      - ./infrastructure/gophish/config.json:/opt/gophish/config.json
+      - ./infrastructure/gophish/data:/opt/gophish/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - paware-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # ─── Mailpit ────────────────────────────────────────────
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: paware-mailpit
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - paware-net
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8025"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ─── Caddy (reverse proxy) ─────────────────────────────
+  caddy:
+    image: caddy:latest
+    container_name: paware-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infrastructure/caddy/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - backend
+      - frontend
+      - gophish
+    networks:
+      - paware-net
+
+networks:
+  paware-net:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,3 @@
+# GoPhish data directory
+This directory stores GoPhish database and campaign logs.
+Do not commit files in this directory.

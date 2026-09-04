@@ -1,0 +1,42 @@
+localhost {
+    # Frontend
+    handle /assets/* {
+        reverse_proxy frontend:80
+    }
+
+    handle {
+        # API routes
+        handle_path /api/* {
+            reverse_proxy backend:8080
+        }
+
+        # Tracking routes (public)
+        handle_path /t/* {
+            reverse_proxy backend:8080
+        }
+
+        # GoPhish admin (dev only)
+        handle_path /gophish/* {
+            strip_prefix /gophish
+            reverse_proxy gophish:8080
+        }
+
+        # Mailpit (dev only)
+        handle_path /mailpit/* {
+            strip_prefix /mailpit
+            reverse_proxy mailpit:8025
+        }
+
+        # Default → React SPA
+        reverse_proxy frontend:80
+    }
+
+    # Security headers
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy strict-origin-when-cross-origin
+        X-XSS-Protection "1; mode=block"
+        -Server
+    }
+}
