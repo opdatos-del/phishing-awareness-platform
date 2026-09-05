@@ -42,6 +42,14 @@ public class TrackingController {
             + "<li>Reporta correos sospechosos con el boton de reportar en tu cliente de correo.</li>"
             + "</ul>"
             + "<p style='color:#666;border-top:1px solid #eee;padding-top:16px'>Simulacion: {SLUG} · Programa de concienciacion de seguridad</p>"
+            + "<form id='training-quiz'><h2 style='color:#333'>Comprobacion rapida</h2>"
+            + "<label><input type='radio' name='answer' value='yes' required> Revisar remitente y URL antes de actuar</label><br>"
+            + "<label><input type='radio' name='answer' value='no'> Compartir mi contrasena si el mensaje parece urgente</label><br>"
+            + "<button type='submit' style='margin-top:16px;padding:10px 16px;background:#17324d;color:#fff;border:0;border-radius:5px'>Completar training</button>"
+            + "</form><p id='quiz-result' style='color:#18864b'></p>"
+            + "<script>document.getElementById('training-quiz').addEventListener('submit',function(e){e.preventDefault();"
+            + "var a=document.querySelector('input[name=answer]:checked').value;fetch('/api/v1/tracking/{{TOKEN}}/training-complete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({answer:a})})"
+            + ".then(function(){document.getElementById('quiz-result').textContent='Training completado. Gracias por participar.';});});</script>"
             + "</div></body></html>";
 
     private final CampaignRecipientRepository campaignRecipientRepository;
@@ -122,6 +130,10 @@ public class TrackingController {
         String html = landing.getHtml()
                 .replace("{{TOKEN}}", safeToken)
                 .replace("{{SLUG}}", slug);
+        if (!safeToken.isBlank()) {
+            html = html.replace("</body>", "<p style='text-align:center;margin:24px;font-family:Arial'><a href='/api/v1/tracking/"
+                    + safeToken + "/report'>Reportar phishing</a></p></body>");
+        }
         return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(html);
     }
 
@@ -138,7 +150,8 @@ public class TrackingController {
             }
         }
 
-        String html = TRAINING_HTML.replace("{SLUG}", slug.replace('-', ' '));
+        String html = TRAINING_HTML.replace("{SLUG}", slug.replace('-', ' '))
+                .replace("{{TOKEN}}", token == null ? "" : token);
         return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(html);
     }
 
@@ -185,6 +198,42 @@ public class TrackingController {
         }
 
         return ResponseEntity.ok(Map.of("status", "recorded"));
+    }
+
+    @PostMapping("/api/v1/tracking/{token}/training-complete")
+    public ResponseEntity<?> trainingComplete(@PathVariable String token,
+                                              @RequestHeader(value = "User-Agent", required = false) String userAgent) {
+        CampaignRecipient cr = findByTokenOrNotFound(token);
+        if (cr == null) return ResponseEntity.notFound().build();
+        if (cr.getTrainingCompletedAt() == null) {
+            cr.setTrainingCompletedAt(LocalDateTime.now());
+            campaignRecipientRepository.save(cr);
+            registerEvent(cr, CampaignEvent.EventType.TRAINING_COMPLETED, userAgent);
+        }
+        return ResponseEntity.ok(Map.of("status", "completed"));
+    }
+
+    @GetMapping("/api/v1/tracking/{token}/report")
+    public ResponseEntity<?> reportGet(@PathVariable String token,
+                                       @RequestHeader(value = "User-Agent", required = false) String userAgent) {
+        return report(token, userAgent);
+    }
+
+    @PostMapping("/api/v1/tracking/{token}/report")
+    public ResponseEntity<?> reportPost(@PathVariable String token,
+                                        @RequestHeader(value = "User-Agent", required = false) String userAgent) {
+        return report(token, userAgent);
+    }
+
+    private ResponseEntity<?> report(String token, String userAgent) {
+        CampaignRecipient cr = findByTokenOrNotFound(token);
+        if (cr == null) return ResponseEntity.notFound().build();
+        if (cr.getReportedAt() == null) {
+            cr.setReportedAt(LocalDateTime.now());
+            campaignRecipientRepository.save(cr);
+            registerEvent(cr, CampaignEvent.EventType.EMAIL_REPORTED, userAgent);
+        }
+        return ResponseEntity.ok(Map.of("status", "reported"));
     }
 
     private CampaignRecipient findByTokenOrNotFound(String token) {
