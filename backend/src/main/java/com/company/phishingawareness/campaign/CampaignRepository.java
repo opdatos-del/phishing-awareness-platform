@@ -15,4 +15,7 @@ public interface CampaignRepository extends JpaRepository<Campaign, Long> {
            "(:search IS NULL OR :search = '' OR " +
            "LOWER(c.name) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<Campaign> search(@Param("search") String search, Pageable pageable);
+    long countByStatus(Campaign.Status status);
+    List<Campaign> findTop5ByOrderByCreatedAtDesc();
+    List<Campaign> findByStatusAndScheduledAtLessThanEqual(Campaign.Status status, java.time.LocalDateTime at);
 }

@@ -56,6 +56,15 @@ public class CampaignRecipient extends BaseEntity {
     @Column(name = "training_viewed_at")
     private LocalDateTime trainingViewedAt;
 
+    @Column(name = "delivered_at")
+    private LocalDateTime deliveredAt;
+
+    @Column(name = "training_completed_at")
+    private LocalDateTime trainingCompletedAt;
+
+    @Column(name = "gophish_recipient_id", length = 100)
+    private String gophishRecipientId;
+
     // Getters and setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -79,4 +88,10 @@ public class CampaignRecipient extends BaseEntity {
     public void setReportedAt(LocalDateTime reportedAt) { this.reportedAt = reportedAt; }
     public LocalDateTime getTrainingViewedAt() { return trainingViewedAt; }
     public void setTrainingViewedAt(LocalDateTime trainingViewedAt) { this.trainingViewedAt = trainingViewedAt; }
+    public LocalDateTime getDeliveredAt() { return deliveredAt; }
+    public void setDeliveredAt(LocalDateTime deliveredAt) { this.deliveredAt = deliveredAt; }
+    public LocalDateTime getTrainingCompletedAt() { return trainingCompletedAt; }
+    public void setTrainingCompletedAt(LocalDateTime trainingCompletedAt) { this.trainingCompletedAt = trainingCompletedAt; }
+    public String getGophishRecipientId() { return gophishRecipientId; }
+    public void setGophishRecipientId(String gophishRecipientId) { this.gophishRecipientId = gophishRecipientId; }
 }

@@ -15,4 +15,18 @@ public interface CampaignRecipientRepository extends JpaRepository<CampaignRecip
     Optional<CampaignRecipient> findByTrackingToken(String trackingToken);
     Optional<CampaignRecipient> findByCampaignIdAndRecipientId(Long campaignId, Long recipientId);
     long countByCampaignId(Long campaignId);
+    Optional<CampaignRecipient> findByCampaignGophishCampaignIdAndRecipientEmail(Long gophishCampaignId, String email);
+    Optional<CampaignRecipient> findByCampaignGophishCampaignIdAndGophishRecipientId(Long gophishCampaignId, String recipientId);
+    long countBySentAtIsNotNull();
+    long countByOpenedAtIsNotNull();
+    long countByClickedAtIsNotNull();
+    long countBySubmittedAtIsNotNull();
+    long countByTrainingViewedAtIsNotNull();
+    long countByCampaignIdAndSentAtIsNotNull(Long campaignId);
+    long countByCampaignIdAndOpenedAtIsNotNull(Long campaignId);
+    long countByCampaignIdAndClickedAtIsNotNull(Long campaignId);
+    long countByCampaignIdAndSubmittedAtIsNotNull(Long campaignId);
+    long countByCampaignIdAndReportedAtIsNotNull(Long campaignId);
+    long countByCampaignIdAndTrainingViewedAtIsNotNull(Long campaignId);
+    long countByCampaignIdAndTrainingCompletedAtIsNotNull(Long campaignId);
 }

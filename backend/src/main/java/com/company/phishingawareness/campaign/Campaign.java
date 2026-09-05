@@ -51,6 +51,12 @@ public class Campaign extends BaseEntity {
     @Column(name = "completed_at")
     private java.time.LocalDateTime completedAt;
 
+    @Column(name = "sent_at")
+    private java.time.LocalDateTime sentAt;
+
+    @Column(name = "gophish_campaign_id", unique = true)
+    private Long gophishCampaignId;
+
     public enum Status {
         DRAFT, SCHEDULED, RUNNING, COMPLETED, CANCELLED
     }
@@ -74,4 +80,8 @@ public class Campaign extends BaseEntity {
     public void setStartedAt(java.time.LocalDateTime startedAt) { this.startedAt = startedAt; }
     public java.time.LocalDateTime getCompletedAt() { return completedAt; }
     public void setCompletedAt(java.time.LocalDateTime completedAt) { this.completedAt = completedAt; }
+    public java.time.LocalDateTime getSentAt() { return sentAt; }
+    public void setSentAt(java.time.LocalDateTime sentAt) { this.sentAt = sentAt; }
+    public Long getGophishCampaignId() { return gophishCampaignId; }
+    public void setGophishCampaignId(Long gophishCampaignId) { this.gophishCampaignId = gophishCampaignId; }
 }
