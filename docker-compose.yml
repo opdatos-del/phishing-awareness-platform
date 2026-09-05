@@ -17,6 +17,7 @@ services:
       - GOPHISH_API_URL=${GOPHISH_API_URL}
       - GOPHISH_API_KEY=${GOPHISH_API_KEY}
       - GOPHISH_URL=${GOPHISH_URL}
+      - PAWARE_PUBLIC_URL=${PAWARE_PUBLIC_URL}
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_PORT=${SMTP_PORT}
     ports:
@@ -56,12 +57,13 @@ services:
       - "8081:8080"
     volumes:
       - ./infrastructure/gophish/data:/opt/gophish/data
+      - ./infrastructure/gophish/config.json:/opt/gophish/config.json:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
       - paware-net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/localhost/3333' 2>/dev/null || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5

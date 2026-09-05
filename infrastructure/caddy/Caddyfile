@@ -6,12 +6,20 @@ localhost {
 
     handle {
         # API routes
-        handle_path /api/* {
+        handle /api/* {
             reverse_proxy backend:8080
         }
 
         # Tracking routes (public)
-        handle_path /t/* {
+        handle /t/* {
+            reverse_proxy backend:8080
+        }
+
+        handle /landing/* {
+            reverse_proxy backend:8080
+        }
+
+        handle /training/* {
             reverse_proxy backend:8080
         }
 
