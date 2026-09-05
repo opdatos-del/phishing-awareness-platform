@@ -49,7 +49,7 @@ public class CampaignService {
     }
 
     public Campaign findById(Long id) {
-        return campaignRepo.findById(id)
+        return campaignRepo.findDetailedById(id)
                 .orElseThrow(() -> new NotFoundException("Campaign not found with id: " + id));
     }
 
