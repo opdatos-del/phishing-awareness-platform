@@ -35,6 +35,18 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
     }
 
+    location /landing/ {
+        proxy_pass http://backend:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    location /training/ {
+        proxy_pass http://backend:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
     # Proxy actuator to backend
     location /actuator/ {
         proxy_pass http://backend:8080;
