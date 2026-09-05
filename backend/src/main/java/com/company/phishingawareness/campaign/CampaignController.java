@@ -35,7 +35,7 @@ public class CampaignController {
             @RequestParam(defaultValue = "") String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        Page<Campaign> result = service.findAll(PageRequest.of(page, size));
+        Page<Campaign> result = service.findAll(search, PageRequest.of(page, size));
         return PagedResponse.of(
             result.getContent(), result.getNumber(), result.getSize(),
             result.getTotalElements(), result.getTotalPages()
@@ -75,5 +75,21 @@ public class CampaignController {
     @GetMapping("/{id}/recipients")
     public List<CampaignService.CampaignRecipientResponse> listRecipients(@PathVariable Long id) {
         return service.listRecipients(id);
+    }
+
+    @GetMapping("/{id}/stats")
+    public CampaignService.CampaignStats stats(@PathVariable Long id) {
+        return service.stats(id);
+    }
+
+    @GetMapping("/{id}/events")
+    public List<CampaignService.EventResponse> events(@PathVariable Long id) {
+        return service.events(id);
+    }
+
+    @PostMapping("/{id}/launch")
+    public Campaign launch(@PathVariable Long id,
+                           @RequestBody(required = false) CampaignService.LaunchRequest request) {
+        return service.launch(id, request == null ? null : request.scheduledAt());
     }
 }
