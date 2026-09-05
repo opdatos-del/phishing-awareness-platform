@@ -17,6 +17,7 @@ public interface CampaignRecipientRepository extends JpaRepository<CampaignRecip
     long countByCampaignId(Long campaignId);
     Optional<CampaignRecipient> findByCampaignGophishCampaignIdAndRecipientEmail(Long gophishCampaignId, String email);
     Optional<CampaignRecipient> findByCampaignGophishCampaignIdAndGophishRecipientId(Long gophishCampaignId, String recipientId);
+    List<CampaignRecipient> findByCampaignGophishCampaignId(Long gophishCampaignId);
     long countBySentAtIsNotNull();
     long countByOpenedAtIsNotNull();
     long countByClickedAtIsNotNull();

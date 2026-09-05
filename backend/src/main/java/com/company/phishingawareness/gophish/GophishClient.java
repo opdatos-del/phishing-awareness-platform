@@ -120,6 +120,26 @@ public class GophishClient {
         }
     }
 
+    /** Returns the raw results list for a GoPhish campaign id.
+     *
+     *  Results carry open/click timestamps that GoPhish does not push via
+     *  webhooks; a scheduled poller uses this to fill the local funnel.
+     */
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> campaignResults(Long gophishCampaignId) {
+        requireConfigured();
+        Map<String, Object> body = webClient.get()
+                .uri(uri -> uri.path("/api/campaigns/" + gophishCampaignId).queryParam("api_key", apiKey).build())
+                .header("Authorization", apiKey)
+                .retrieve()
+                .bodyToMono(Map.class)
+                .block(Duration.ofSeconds(20));
+        if (body == null) throw new IllegalStateException("Empty response from GoPhish at /api/campaigns/" + gophishCampaignId);
+        Object results = body.get("results");
+        if (!(results instanceof List<?> list)) return List.of();
+        return (List<Map<String, Object>>) (List<?>) list;
+    }
+
     private Map<String, Object> post(String path, Object payload) {
         Map<?, ?> body = webClient.post()
                 .uri(uri -> uri.path(path).queryParam("api_key", apiKey).build())

@@ -59,6 +59,7 @@ gophish:
   api-key: ${GOPHISH_API_KEY:}
   url: ${GOPHISH_URL:http://localhost:8081}
   from-address: ${GOPHISH_FROM_ADDRESS:phishing-sim@company.com}
+  results-poll-delay-ms: ${GOPHISH_RESULTS_POLL_DELAY_MS:30000}
 
 # Public URL used in the GoPhish landing redirect and report button.
 tracking:
