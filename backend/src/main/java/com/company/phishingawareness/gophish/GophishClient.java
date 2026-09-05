@@ -161,19 +161,8 @@ public class GophishClient {
     }
 
     private String toGophishTemplate(String html) {
-        String transformed = html.replace("{{TRACKING_URL}}", "{{.URL}}")
-                .replace("{{TRACKING_OPEN_PIXEL}}", "{{.Tracker}}")
-                .replace("{{TRACKING_REPORT_URL}}", publicUrl + "/api/v1/tracking/{{.Position}}/report");
-        if (!html.contains("{{TRACKING_REPORT_URL}}")) {
-            String reportLink = "<p><a href=\"" + htmlAttr(publicUrl)
-                    + "/api/v1/tracking/{{.Position}}/report\" role=\"button\">Reportar phishing</a></p>";
-            if (transformed.contains("</body>")) {
-                transformed = transformed.replace("</body>", reportLink + "</body>");
-            } else {
-                transformed += reportLink;
-            }
-        }
-        return transformed;
+        return html.replace("{{TRACKING_URL}}", "{{.URL}}")
+                .replace("{{TRACKING_OPEN_PIXEL}}", "{{.Tracker}}");
     }
 
     private static String[] splitName(String fullName) {

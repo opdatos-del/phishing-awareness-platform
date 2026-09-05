@@ -130,10 +130,6 @@ public class TrackingController {
         String html = landing.getHtml()
                 .replace("{{TOKEN}}", safeToken)
                 .replace("{{SLUG}}", slug);
-        if (!safeToken.isBlank()) {
-            html = html.replace("</body>", "<p style='text-align:center;margin:24px;font-family:Arial'><a href='/api/v1/tracking/"
-                    + safeToken + "/report'>Reportar phishing</a></p></body>");
-        }
         return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(html);
     }
 
