@@ -11,7 +11,7 @@ import org.springframework.data.repository.query.Param;
 public interface CampaignRepository extends JpaRepository<Campaign, Long> {
     List<Campaign> findByStatus(Campaign.Status status);
 
-    @Query("SELECT c FROM Campaign c WHERE " +
+    @Query("SELECT DISTINCT c FROM Campaign c LEFT JOIN FETCH c.template LEFT JOIN FETCH c.landingPage WHERE " +
            "(:search IS NULL OR :search = '' OR " +
            "LOWER(c.name) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<Campaign> search(@Param("search") String search, Pageable pageable);
