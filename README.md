@@ -123,13 +123,16 @@ Run `./gradlew flywayMigrate` or let Spring Boot handle it on startup.
 
 ## GoPhish
 
-GoPhish runs as the campaign engine. Configuration:
+GoPhish runs as the campaign engine. The backend provisions templates, safe
+landing pages, SMTP profiles, groups and campaigns through its API. Tracking
+tokens remain local to Paware and are carried in the target `position` field;
+the GoPhish landing page redirects to the local training flow. Configuration:
 
 ```
 infrastructure/gophish/config.json
 ```
 
-API integration layer will be added in Phase 3.
+The API integration layer provisions GoPhish resources and receives webhooks in Phase 3.
 
 ## Mailpit
 
@@ -178,12 +181,20 @@ pnpm test
 
 - [x] Phase 0: Infrastructure (GoPhish, Mailpit, Caddy, Docker)
 - [x] Phase 1: Backend base (Spring Boot, MySQL, Flyway, Security, Entities)
-- [ ] Phase 2: Tracking (tokens, link click, form submit)
-- [ ] Phase 3: GoPhish integration (API, webhooks, event mapping)
-- [ ] Phase 4: Frontend (dashboard, campaigns, recipients, templates)
-- [ ] Phase 5: Templates (5 email + 5 landing page templates)
-- [ ] Phase 6: Analytics (rates, historical, comparison)
-- [ ] Phase 7: Awareness (training page post-simulation)
+- [x] Phase 2: Tracking (tokens, open pixel, click, landing, submit, training)
+- [x] Phase 3: GoPhish integration (API provisioning, scheduling, webhooks, event mapping)
+- [x] Phase 4: Frontend (login, admin layout, CRUD, campaigns and funnel)
+- [x] Phase 5: Templates (5 seeded email + 5 seeded landing page templates)
+- [x] Phase 6: Analytics (dashboard funnel, campaign rates, timeline and CSV export)
+- [~] Phase 7: Awareness (training content, quiz and `TRAINING_COMPLETED`; report button included)
+
+### Architecture decisions
+
+- GoPhish sends email through the configured SMTP sending profile. Mailpit is the
+  development SMTP target. Spring Mail is not used while GoPhish is enabled.
+- Set `GOPHISH_API_KEY` to enable campaign launch. Without it, CRUD and local
+  tracking remain available but launch returns a clear configuration error.
+- GoPhish admin is exposed on `3333`; its phishing server is exposed on `8081`.
 
 ## License
 
