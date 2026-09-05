@@ -1,11 +1,11 @@
-# Phishing Awareness Platform
+# Plataforma de Concienciación Anti-Phishing
 
-Internal phishing simulation platform for employee security awareness training.
+Plataforma interna de simulación de phishing para la formación en seguridad de los empleados.
 
-## Architecture
+## Arquitectura
 
 ```
-                       ADMIN USER
+                       USUARIO ADMIN
                             │
                             ▼
                          CADDY
@@ -28,7 +28,7 @@ Internal phishing simulation platform for employee security awareness training.
                          Mailpit
                             │
                             ▼
-                     Test emails
+                     Emails de prueba
 ```
 
 ## Stack
@@ -38,7 +38,7 @@ Internal phishing simulation platform for employee security awareness training.
 - Gradle 8.14 (Kotlin DSL)
 - Spring Security + JWT (jjwt 0.13.0)
 - Spring Data JPA + Hibernate
-- Flyway (schema migrations)
+- Flyway (migraciones de esquema)
 - MySQL
 
 ### Frontend
@@ -49,22 +49,22 @@ Internal phishing simulation platform for employee security awareness training.
 - TanStack Query 5.102
 - Recharts 3.10
 
-### Infrastructure
+### Infraestructura
 - Docker + Docker Compose
-- GoPhish (campaign engine)
-- Mailpit (dev SMTP catcher)
-- Caddy (reverse proxy)
+- GoPhish (motor de campañas)
+- Mailpit (receptor SMTP de desarrollo)
+- Caddy (proxy inverso)
 
-## Requirements
+## Requisitos
 
 - Java 21+
 - Node.js 24+
 - pnpm
-- Gradle 8.14+ (or use wrapper)
+- Gradle 8.14+ (o usar el wrapper)
 - Docker + Docker Compose
-- MySQL 8.0+ (installed on host)
+- MySQL 8.0+ (instalado en el host)
 
-## MySQL Setup
+## Configuración de MySQL
 
 ```sql
 CREATE DATABASE phishing_awareness
@@ -76,90 +76,105 @@ GRANT ALL PRIVILEGES ON phishing_awareness.* TO 'phishing_app'@'%';
 FLUSH PRIVILEGES;
 ```
 
-## Configuration
+## Configuración
 
 ```bash
 cp .env.example .env
-# Edit .env with your MySQL credentials and secrets
+# Edita .env con tus credenciales de MySQL y secretos
 ```
 
-## Quick Start
+## Inicio rápido
 
 ```bash
-# Start all services
+# Inicia todos los servicios
 ./scripts/dev-up.sh
 
-# Or manually
+# O manualmente
 docker compose up -d --build
 
-# View logs
+# Ver logs
 docker compose logs -f
 ```
 
 ### URLs
 
-| Service   | URL                          |
-|-----------|------------------------------|
-| App       | http://localhost              |
-| API       | http://localhost/api/v1       |
-| GoPhish   | http://localhost:3333         |
-| Mailpit   | http://localhost:8025         |
+| Servicio | URL                          |
+|----------|------------------------------|
+| App      | http://localhost:3000        |
+| API      | http://localhost:8080/api/v1 |
+| GoPhish  | http://localhost:3333        |
+| Mailpit  | http://localhost:8025        |
 
-### Default Credentials
+> **Nota sobre puertos:** el puerto 80 del host no es Caddy. Una aplicación local
+> puede ocuparlo, así que la URL pública de la app apunta a `http://localhost:3000`
+> (el nginx del contenedor frontend proxya `/api`, `/t`, `/landing`, `/training`).
 
-| User  | Password |
-|-------|----------|
-| admin | admin123 |
+### Credenciales por defecto
 
-## Flyway Migrations
+| Usuario | Contraseña |
+|---------|------------|
+| admin   | admin123   |
 
-Schema changes are managed via Flyway in:
+La UI de GoPhish (`http://localhost:3333`) requiere login. La contraseña inicial
+del admin de GoPhish se muestra en la consola del contenedor al primer arranque
+(`docker logs gophish`, línea "Please login with the username admin and the
+password ..."). La API key se genera desde Settings → API Keys en la UI.
+
+## Migraciones Flyway
+
+Los cambios de esquema se gestionan con Flyway en:
 
 ```
 backend/src/main/resources/db/migration/
 ```
 
-Run `./gradlew flywayMigrate` or let Spring Boot handle it on startup.
+Ejecuta `./gradlew flywayMigrate` o deja que Spring Boot lo haga al arrancar.
 
 ## GoPhish
 
-GoPhish runs as the campaign engine. The backend provisions templates, safe
-landing pages, SMTP profiles, groups and campaigns through its API. Tracking
-tokens remain local to Paware and are carried in the target `position` field;
-the GoPhish landing page redirects to the local training flow. Configuration:
+GoPhish actúa como motor de campañas. El backend aprovisiona plantillas, páginas
+de aterrizaje seguras, perfiles SMTP, grupos y campañas a través de su API. Los
+tokens de seguimiento permanecen locales a Paware y se transportan en el campo
+`position` del target; la página de GoPhish redirige al flujo de formación local.
+Configuración:
 
 ```
 infrastructure/gophish/config.json
 ```
 
-The API integration layer provisions GoPhish resources and receives webhooks in Phase 3.
+**Sincronización de eventos:** GoPhish no publica webhooks para aperturas (opens)
+ni clics. Para llenar el embudo local, el componente `GophishResultsPoller`
+(registrado cada 30 s, configurable con `GOPHISH_RESULTS_POLL_DELAY_MS`) lee
+`GET /api/campaigns/{id}` y registra los eventos `EMAIL_OPENED` y `LINK_CLICKED`
+en la base local. El webhook (`/api/v1/integrations/gophish/webhook`) queda como
+respaldo para eventos externos si se añadieran.
 
 ## Mailpit
 
-Mailpit catches all SMTP emails in development. View at http://localhost:8025.
+Mailpit captura todos los emails SMTP en desarrollo. Míralos en http://localhost:8025.
 
-No real emails are sent in dev mode.
+No se envían emails reales en modo dev.
 
-## Security
+## Seguridad
 
-- Password hashing with BCrypt
-- JWT authentication for dashboard
-- Flyway-managed schema (no hibernate auto-DDL)
-- No credential capture in simulations
-- Tracking tokens via UUID (no sequential IDs)
-- No emails in URLs
-- CORS limited
-- Security headers via Caddy
-- No stack traces exposed
+- Hash de contraseñas con BCrypt
+- Autenticación JWT para el panel
+- Esquema gestionado por Flyway (sin auto-DDL de Hibernate)
+- Sin captura de credenciales en las simulaciones
+- Tokens de seguimiento por UUID (sin IDs secuenciales)
+- Sin emails en las URLs
+- CORS limitado
+- Cabeceras de seguridad vía Caddy
+- Sin stack traces expuestos
 
-## Development
+## Desarrollo
 
 ```bash
-# Backend only (requires MySQL running on host)
+# Sólo backend (requiere MySQL corriendo en el host)
 cd backend
 ./gradlew bootRun
 
-# Frontend only
+# Sólo frontend
 cd frontend
 pnpm install
 pnpm dev
@@ -168,34 +183,37 @@ pnpm dev
 ## Testing
 
 ```bash
-# Backend tests
+# Tests backend
 cd backend
 ./gradlew test
 
-# Frontend tests
+# Tests frontend
 cd frontend
 pnpm test
 ```
 
 ## Roadmap
 
-- [x] Phase 0: Infrastructure (GoPhish, Mailpit, Caddy, Docker)
-- [x] Phase 1: Backend base (Spring Boot, MySQL, Flyway, Security, Entities)
-- [x] Phase 2: Tracking (tokens, open pixel, click, landing, submit, training)
-- [x] Phase 3: GoPhish integration (API provisioning, scheduling, webhooks, event mapping)
-- [x] Phase 4: Frontend (login, admin layout, CRUD, campaigns and funnel)
-- [x] Phase 5: Templates (5 seeded email + 5 seeded landing page templates)
-- [x] Phase 6: Analytics (dashboard funnel, campaign rates, timeline and CSV export)
-- [~] Phase 7: Awareness (training content, quiz and `TRAINING_COMPLETED`; report button included)
+- [x] Fase 0: Infraestructura (GoPhish, Mailpit, Caddy, Docker)
+- [x] Fase 1: Base backend (Spring Boot, MySQL, Flyway, Seguridad, Entidades)
+- [x] Fase 2: Tracking (tokens, pixel de apertura, clic, landing, submit, training)
+- [x] Fase 3: Integración GoPhish (aprovisionamiento API, programación, sincronización de resultados)
+- [x] Fase 4: Frontend (login, layout admin, CRUD, campañas y embudo)
+- [x] Fase 5: Plantillas (5 plantillas de email + 5 landings de ejemplo)
+- [x] Fase 6: Analítica (embudo del dashboard, tasas de campaña, timeline y export CSV)
+- [x] Fase 7: Concienciación (contenido de training, quiz y `TRAINING_COMPLETED`; botón de reportar incluido)
 
-### Architecture decisions
+### Decisiones de arquitectura
 
-- GoPhish sends email through the configured SMTP sending profile. Mailpit is the
-  development SMTP target. Spring Mail is not used while GoPhish is enabled.
-- Set `GOPHISH_API_KEY` to enable campaign launch. Without it, CRUD and local
-  tracking remain available but launch returns a clear configuration error.
-- GoPhish admin is exposed on `3333`; its phishing server is exposed on `8081`.
+- GoPhish envía emails con el perfil SMTP configurado. Mailpit es el destino SMTP
+  de desarrollo. Spring Mail no se usa mientras GoPhish esté habilitado.
+- Define `GOPHISH_API_KEY` para habilitar el lanzamiento de campañas. Sin ella,
+  el CRUD y el tracking local siguen disponibles, pero el lanzamiento devuelve
+  un error de configuración claro.
+- La consola de GoPhish se expone en `3333`; su servidor de phishing en `8081`.
+- La apertura/clic se sincronizan por sondeo (poller), no por webhook, porque
+  GoPhish no emite esos eventos.
 
-## License
+## Licencia
 
-Internal use only.
+Uso interno únicamente.
