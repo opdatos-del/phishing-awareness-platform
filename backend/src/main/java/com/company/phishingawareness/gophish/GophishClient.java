@@ -53,7 +53,7 @@ public class GophishClient {
         requireConfigured();
 
         String suffix = "paware-" + campaign.getId();
-        Map<String, Object> template = post("/api/templates", Map.of(
+        Map<String, Object> template = post("/api/templates/", Map.of(
                 "name", suffix + "-template",
                 "subject", campaign.getTemplate().getSubject(),
                 "html", toGophishTemplate(campaign.getTemplate().getHtml()),
@@ -64,14 +64,14 @@ public class GophishClient {
                 + "window.location.replace(\"" + htmlAttr(publicUrl) + "/landing/"
                 + htmlAttr(campaign.getLandingPage().getSlug())
                 + "?token={{.Position}}\");</script></body></html>";
-        Map<String, Object> page = post("/api/pages", Map.of(
+        Map<String, Object> page = post("/api/pages/", Map.of(
                 "name", suffix + "-page",
                 "html", pageHtml,
                 "capture_credentials", false,
                 "capture_passwords", false
         ));
 
-        Map<String, Object> smtp = post("/api/smtp", Map.of(
+        Map<String, Object> smtp = post("/api/smtp/", Map.of(
                 "name", suffix + "-smtp",
                 "host", smtpHost + ":" + smtpPort,
                 "from_address", fromAddress,
@@ -90,7 +90,7 @@ public class GophishClient {
             target.put("position", cr.getTrackingToken());
             return target;
         }).toList();
-        Map<String, Object> group = post("/api/groups", Map.of(
+        Map<String, Object> group = post("/api/groups/", Map.of(
                 "name", suffix + "-group",
                 "targets", targets
         ));
@@ -105,7 +105,7 @@ public class GophishClient {
         if (scheduledAt != null && scheduledAt.isAfter(java.time.LocalDateTime.now())) {
             campaignPayload.put("launch_date", scheduledAt.toString());
         }
-        Map<String, Object> gophishCampaign = post("/api/campaigns", campaignPayload);
+        Map<String, Object> gophishCampaign = post("/api/campaigns/", campaignPayload);
 
         return new ProvisionedCampaign(asLong(gophishCampaign.get("id")));
     }
