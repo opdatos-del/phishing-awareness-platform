@@ -55,9 +55,14 @@ management:
 
 # GoPhish integration
 gophish:
-  api-url: ${GOPHISH_API_URL:https://gophish:3333}
+  api-url: ${GOPHISH_API_URL:http://gophish:3333}
   api-key: ${GOPHISH_API_KEY:}
-  url: ${GOPHISH_URL:https://gophish.localtest.me}
+  url: ${GOPHISH_URL:http://localhost:8081}
+  from-address: ${GOPHISH_FROM_ADDRESS:phishing-sim@company.com}
+
+# Public URL used in the GoPhish landing redirect and report button.
+tracking:
+  public-url: ${PAWARE_PUBLIC_URL:http://localhost}
 
 # JWT
 jwt:

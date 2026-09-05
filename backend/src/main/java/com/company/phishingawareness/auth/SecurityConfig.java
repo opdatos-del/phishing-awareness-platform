@@ -32,6 +32,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/auth/login").permitAll()
                 .requestMatchers(HttpMethod.GET, "/t/**").permitAll()
                 .requestMatchers("/api/v1/tracking/**").permitAll()
+                .requestMatchers("/api/v1/integrations/gophish/webhook").permitAll()
+                .requestMatchers("/api/v1/users/**").hasRole("ADMIN")
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()
             )
