@@ -201,7 +201,7 @@ pnpm test
 - [x] Fase 4: Frontend (login, layout admin, CRUD, campañas y embudo)
 - [x] Fase 5: Plantillas (5 plantillas de email + 5 landings de ejemplo)
 - [x] Fase 6: Analítica (embudo del dashboard, tasas de campaña, timeline y export CSV)
-- [x] Fase 7: Concienciación (contenido de training, quiz y `TRAINING_COMPLETED`; botón de reportar incluido)
+- [x] Fase 7: Concienciación (contenido de training, quiz y `TRAINING_COMPLETED`)
 
 ### Decisiones de arquitectura
 

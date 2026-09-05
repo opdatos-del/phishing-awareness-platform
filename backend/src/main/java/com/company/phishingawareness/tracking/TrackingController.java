@@ -39,7 +39,7 @@ public class TrackingController {
             + "<li>Desconfia de mensajes que crean urgencia o amenazan con bloquear tu cuenta.</li>"
             + "<li>Pasa el cursor sobre los enlaces antes de hacer clic y verifica la URL.</li>"
             + "<li>Nunca introduzcas tu contrasena desde un enlace de un correo.</li>"
-            + "<li>Reporta correos sospechosos con el boton de reportar en tu cliente de correo.</li>"
+            + "<li>Informa los correos sospechosos por el canal interno de seguridad.</li>"
             + "</ul>"
             + "<p style='color:#666;border-top:1px solid #eee;padding-top:16px'>Simulacion: {SLUG} · Programa de concienciacion de seguridad</p>"
             + "<form id='training-quiz'><h2 style='color:#333'>Comprobacion rapida</h2>"
