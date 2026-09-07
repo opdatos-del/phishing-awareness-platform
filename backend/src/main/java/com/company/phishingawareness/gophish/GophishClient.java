@@ -162,7 +162,10 @@ public class GophishClient {
 
     private String toGophishTemplate(String html) {
         return html.replace("{{TRACKING_URL}}", "{{.URL}}")
-                .replace("{{TRACKING_OPEN_PIXEL}}", "{{.Tracker}}");
+                .replace("{{TRACKING_OPEN_PIXEL}}", "{{.Tracker}}")
+                // Landing-only placeholders must never reach GoPhish's template parser.
+                .replace("{{TOKEN}}", "")
+                .replace("{{SLUG}}", "");
     }
 
     private static String[] splitName(String fullName) {

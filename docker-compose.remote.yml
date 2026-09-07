@@ -1,0 +1,134 @@
+name: paware-remote
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: paware-remote-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - paware_remote_mysql:/var/lib/mysql
+    networks:
+      - paware-remote-net
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  gophish:
+    build:
+      context: ./infrastructure/gophish
+      dockerfile: Dockerfile.remote
+    container_name: paware-remote-gophish
+    restart: unless-stopped
+    volumes:
+      - paware_remote_gophish:/opt/gophish/data
+    ports:
+      - "127.0.0.1:3333:3333"
+      - "8081:8080"
+    networks:
+      - paware-remote-net
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/localhost/3333' 2>/dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: paware-remote-mailpit
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8025:8025"
+    networks:
+      - paware-remote-net
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8025"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: paware-remote-backend
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/${DB_NAME}?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_FLYWAY_ENABLED: "true"
+      GOPHISH_API_URL: http://gophish:3333
+      GOPHISH_API_KEY: ${GOPHISH_API_KEY}
+      GOPHISH_URL: ${GOPHISH_URL}
+      PAWARE_PUBLIC_URL: ${PAWARE_PUBLIC_URL}
+      GOPHISH_RESULTS_POLL_DELAY_MS: ${GOPHISH_RESULTS_POLL_DELAY_MS}
+      GOPHISH_FROM_ADDRESS: ${GOPHISH_FROM_ADDRESS}
+      JWT_SECRET: ${JWT_SECRET}
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+    depends_on:
+      db:
+        condition: service_healthy
+      gophish:
+        condition: service_healthy
+      mailpit:
+        condition: service_healthy
+    networks:
+      - paware-remote-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: paware-remote-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - paware-remote-net
+
+  caddy:
+    build:
+      context: ./infrastructure/caddy
+      dockerfile: Dockerfile.remote
+    container_name: paware-remote-caddy
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+    ports:
+      - "80:80"
+    volumes:
+      - paware_remote_caddy_data:/data
+      - paware_remote_caddy_config:/config
+    networks:
+      - paware-remote-net
+
+networks:
+  paware-remote-net:
+    driver: bridge
+
+volumes:
+  paware_remote_mysql:
+  paware_remote_gophish:
+  paware_remote_caddy_data:
+  paware_remote_caddy_config:

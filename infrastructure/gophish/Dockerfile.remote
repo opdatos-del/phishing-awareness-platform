@@ -1,0 +1,9 @@
+FROM gophish/gophish:latest
+
+USER root
+COPY config.json /opt/gophish/config.json
+COPY run-remote.sh /opt/gophish/run-remote.sh
+RUN chmod +x /opt/gophish/run-remote.sh
+
+USER root
+ENTRYPOINT ["/opt/gophish/run-remote.sh"]

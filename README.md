@@ -201,7 +201,7 @@ pnpm test
 - [x] Fase 4: Frontend (login, layout admin, CRUD, campañas y embudo)
 - [x] Fase 5: Plantillas (5 plantillas de email + 5 landings de ejemplo)
 - [x] Fase 6: Analítica (embudo del dashboard, tasas de campaña, timeline y export CSV)
-- [x] Fase 7: Concienciación (contenido de training, quiz y `TRAINING_COMPLETED`; botón de reportar incluido)
+- [x] Fase 7: Concienciación (contenido de training, quiz y `TRAINING_COMPLETED`)
 
 ### Decisiones de arquitectura
 
@@ -213,6 +213,22 @@ pnpm test
 - La consola de GoPhish se expone en `3333`; su servidor de phishing en `8081`.
 - La apertura/clic se sincronizan por sondeo (poller), no por webhook, porque
   GoPhish no emite esos eventos.
+
+### Despliegue de prueba en servidor Linux
+
+El stack remoto es autocontenido y usa el contexto Docker `jovy-dev`. No reutilices
+el `.env` local: copia `.env.remote.example` a `.env.remote`, configura los secretos
+y sustituye `SERVER_IP_OR_DOMAIN` por la IP o dominio del servidor.
+
+```powershell
+Copy-Item .env.remote.example .env.remote
+.\scripts\deploy-remote.ps1
+```
+
+La aplicacion queda publicada por Caddy en el puerto 80; GoPhish queda en 8081
+para que sus enlaces de campana sean accesibles durante la prueba. MySQL, Mailpit
+y la consola administrativa de GoPhish permanecen dentro del stack o limitados al
+servidor.
 
 ## Licencia
 
