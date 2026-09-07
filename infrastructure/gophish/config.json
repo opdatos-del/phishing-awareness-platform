@@ -20,5 +20,10 @@
     "filename": "",
     "level": ""
   },
+  "mail": {
+    "host": "mailpit",
+    "port": 1025,
+    "from_address": "phishing-sim@company.com"
+  },
   "smtp_from": "phishing-sim@company.com"
 }
