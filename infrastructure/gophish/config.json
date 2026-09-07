@@ -25,5 +25,6 @@
     "port": 25,
     "from_address": "avisosjovycandy@gmail.com"
   },
-  "smtp_from": "avisosjovycandy@gmail.com"
+  "smtp_from": "avisosjovycandy@gmail.com",
+  "api_key": "75ce3fd2903b280d5c0461e984e1f30dea95254d13584c0a8899fb0fd87d750a"
 }
