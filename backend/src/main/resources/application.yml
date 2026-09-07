@@ -6,13 +6,14 @@ spring:
 
   # Datasource
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://host.docker.internal:3306/phishing_awareness?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC}
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://host.docker.internal:3306/phishing_awareness?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci}
     username: ${SPRING_DATASOURCE_USERNAME:phishing_app}
     password: ${SPRING_DATASOURCE_PASSWORD:CHANGE_ME}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       maximum-pool-size: 20
       minimum-idle: 5
+      connection-init-sql: SET NAMES utf8mb4
       idle-timeout: 300000
       connection-timeout: 20000
 
@@ -58,7 +59,7 @@ gophish:
   api-url: ${GOPHISH_API_URL:http://gophish:3333}
   api-key: ${GOPHISH_API_KEY:}
   url: ${GOPHISH_URL:http://localhost:8081}
-  from-address: ${GOPHISH_FROM_ADDRESS:avisos@jovycandy.com}
+  from-address: ${GOPHISH_FROM_ADDRESS:avisosjovycandy@gmail.com}
   results-poll-delay-ms: ${GOPHISH_RESULTS_POLL_DELAY_MS:30000}
 
 # Public URL used in the GoPhish landing redirect and report button.

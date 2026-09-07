@@ -53,11 +53,12 @@ public class GophishClient {
         requireConfigured();
 
         String suffix = "paware-" + campaign.getId();
+        String gophishHtml = toGophishTemplate(campaign.getTemplate().getHtml());
         Map<String, Object> template = post("/api/templates/", Map.of(
                 "name", suffix + "-template",
                 "subject", campaign.getTemplate().getSubject(),
-                "html", toGophishTemplate(campaign.getTemplate().getHtml()),
-                "text", "Phishing awareness simulation"
+                "html", gophishHtml,
+                "text", stripHtml(gophishHtml)
         ));
 
         String pageHtml = "<!doctype html><html><body><p>Loading...</p><script>"
@@ -181,6 +182,18 @@ public class GophishClient {
 
     private static String htmlAttr(String value) {
         return value.replace("&", "&amp;").replace("\"", "&quot;");
+    }
+
+    /** Strip HTML tags to produce a rough plain-text version for multipart emails. */
+    private static String stripHtml(String html) {
+        if (html == null) return "";
+        return html.replaceAll("<style[\\s\\S]*?</style>", "")
+                   .replaceAll("<script[\\s\\S]*?</script>", "")
+                   .replaceAll("<[^>]+>", " ")
+                   .replaceAll("&nbsp;", " ")
+                   .replaceAll("&amp;", "&")
+                   .replaceAll("\\s+", " ")
+                   .trim();
     }
 
     private static Long asLong(Object value) {

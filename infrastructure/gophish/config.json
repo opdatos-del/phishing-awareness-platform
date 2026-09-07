@@ -23,7 +23,7 @@
   "mail": {
     "host": "relay",
     "port": 25,
-    "from_address": "avisos@jovycandy.com"
+    "from_address": "avisosjovycandy@gmail.com"
   },
-  "smtp_from": "avisos@jovycandy.com"
+  "smtp_from": "avisosjovycandy@gmail.com"
 }
