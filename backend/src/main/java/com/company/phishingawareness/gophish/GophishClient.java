@@ -34,7 +34,7 @@ public class GophishClient {
                          @Value("${tracking.public-url:http://localhost}") String publicUrl,
                          @Value("${smtp.host:localhost}") String smtpHost,
                          @Value("${smtp.port:1025}") String smtpPort,
-                         @Value("${gophish.from-address:phishing-sim@company.com}") String fromAddress) {
+                         @Value("${gophish.from-address:avisos@jovycandy.com}") String fromAddress) {
         this.webClient = WebClient.builder().baseUrl(apiUrl).build();
         this.apiKey = apiKey;
         this.gophishUrl = trimTrailingSlash(gophishUrl);
