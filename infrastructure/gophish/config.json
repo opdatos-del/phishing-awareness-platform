@@ -21,8 +21,8 @@
     "level": ""
   },
   "mail": {
-    "host": "mailpit",
-    "port": 1025,
+    "host": "relay",
+    "port": 25,
     "from_address": "avisos@jovycandy.com"
   },
   "smtp_from": "avisos@jovycandy.com"

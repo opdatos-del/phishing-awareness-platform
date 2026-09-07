@@ -86,6 +86,23 @@ services:
       retries: 3
       start_period: 10s
 
+  # ─── Relay SMTP (postfix -> Gmail Workspace) ─────────——
+  relay:
+    image: boky/postfix:latest
+    container_name: paware-relay
+    restart: unless-stopped
+    environment:
+      - RELAYHOST=${RELAY_HOST}
+      - SMTP_USE_STARTTLS=yes
+      - SMTP_AUTH=yes
+      - SMTP_USER=${RELAY_USER}
+      - SMTP_PASSWORD=${RELAY_PASS}
+      - MYNETWORKS=127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+      - MYHOSTNAME=mail.jovycandy.com
+      - ALLOWED_SENDER_DOMAINS=jovycandy.com
+    networks:
+      - paware-net
+
   # ─── Caddy (reverse proxy) ─────────────────────────────
   caddy:
     image: caddy:latest

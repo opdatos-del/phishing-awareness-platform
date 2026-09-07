@@ -54,6 +54,22 @@ services:
       timeout: 10s
       retries: 3
 
+  relay:
+    image: boky/postfix:latest
+    container_name: paware-remote-relay
+    restart: unless-stopped
+    environment:
+      - RELAYHOST=${RELAY_HOST}
+      - SMTP_USE_STARTTLS=yes
+      - SMTP_AUTH=yes
+      - SMTP_USER=${RELAY_USER}
+      - SMTP_PASSWORD=${RELAY_PASS}
+      - MYNETWORKS=127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+      - MYHOSTNAME=mail.jovycandy.com
+      - ALLOWED_SENDER_DOMAINS=jovycandy.com
+    networks:
+      - paware-remote-net
+
   backend:
     build:
       context: ./backend
@@ -74,8 +90,8 @@ services:
       GOPHISH_RESULTS_POLL_DELAY_MS: ${GOPHISH_RESULTS_POLL_DELAY_MS}
       GOPHISH_FROM_ADDRESS: ${GOPHISH_FROM_ADDRESS}
       JWT_SECRET: ${JWT_SECRET}
-      SMTP_HOST: mailpit
-      SMTP_PORT: 1025
+      SMTP_HOST: relay
+      SMTP_PORT: 25
     depends_on:
       db:
         condition: service_healthy
