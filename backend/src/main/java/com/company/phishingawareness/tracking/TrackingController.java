@@ -43,6 +43,7 @@ public class TrackingController {
             + "<li><strong>Enlaces:</strong> pasa el cursor sin hacer clic y revisa el dominio real antes de pulsar.</li>"
             + "<li><strong>Solicitud de credenciales:</strong> ningun sistema legitimo te pide contrasena, codigo SMS o NIP por enlace.</li>"
             + "<li><strong>Errores de forma:</strong> ortografia, logotipos deformados o pixeles rotos.</li>"
+            + "<li>Informa los correos sospechosos por el canal interno de seguridad.</li>"
             + "</ul>"
             + "<p style='color:#334155;font-size:14.5px;line-height:1.6;margin:16px 0 0'>Ante la duda: no hagas clic y reporta el correo por el canal interno de seguridad. "
             + "Un reporte equivocado es mejor que un clic equivocado.</p>"
