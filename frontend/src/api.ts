@@ -9,6 +9,7 @@ export type CampaignRecipient = { id: number; recipientId: number; recipientName
 export type CampaignStats = { totalSent: number; totalOpened: number; totalClicked: number; totalSubmitted: number; totalReported: number; totalTrainingViewed: number; totalTrainingCompleted: number; openRate: number; clickRate: number; submitRate: number; trainingRate: number }
 export type Dashboard = { activeCampaigns: number; totalCampaigns: number; totalSent: number; totalOpened: number; totalClicked: number; totalSubmitted: number; totalTrainingViewed: number; recentCampaigns: { id: number; name: string; status: string; createdAt: string }[] }
 export type AdminUser = { id: number; username: string; role: string; active: boolean }
+export type RiskReportRow = { recipientId: number; name: string; email: string; campaignsReceived: number; opens: number; clicks: number; submits: number; reports: number; firstSubmittedAt?: string; lastSubmittedAt?: string; riskScore: number; riskLevel: 'BAJO' | 'MEDIO' | 'ALTO' | 'CRITICO' }
 
 export const api = axios.create({ baseURL: import.meta.env.VITE_API_URL || '/api/v1' })
 

@@ -7,8 +7,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface CampaignRecipientRepository extends JpaRepository<CampaignRecipient, Long> {
+    @Query("SELECT cr FROM CampaignRecipient cr JOIN FETCH cr.recipient JOIN FETCH cr.campaign c WHERE c.status <> :draftStatus")
+    List<CampaignRecipient> findAllForRiskReport(@Param("draftStatus") Campaign.Status draftStatus);
     List<CampaignRecipient> findByCampaignId(Long campaignId);
 
     @EntityGraph(attributePaths = {"campaign", "campaign.landingPage"})
