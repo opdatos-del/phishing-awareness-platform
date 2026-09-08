@@ -54,6 +54,12 @@ public class RecipientController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
+    @PostMapping("/batch")
+    public RecipientService.BatchImportResponse importBatch(
+            @RequestBody RecipientService.BatchImportRequest request) {
+        return service.importBatch(request);
+    }
+
     @PutMapping("/{id}")
     public Recipient update(@PathVariable Long id, @Valid @RequestBody RecipientService.UpdateRequest request) {
         return service.update(id, request);

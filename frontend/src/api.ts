@@ -2,6 +2,7 @@ import axios from 'axios'
 
 export type Page<T> = { content: T[]; page: number; size: number; totalElements: number; totalPages: number }
 export type Recipient = { id: number; name: string; email: string; active: boolean }
+export type RecipientBatchResult = { successCount: number; createdCount: number; updatedCount: number; failedItems: { row: number; name: string; email: string; reason: string }[] }
 export type Template = { id: number; name: string; description?: string; category: string; difficulty: string; subject: string; html: string; active: boolean }
 export type LandingPage = { id: number; name: string; slug: string; category: string; difficulty: string; html: string; active: boolean }
 export type Campaign = { id: number; name: string; description?: string; status: string; template: Template; landingPage: LandingPage; scheduledAt?: string; startedAt?: string; sentAt?: string }

@@ -1,6 +1,7 @@
 package com.company.phishingawareness.recipient;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,6 +13,7 @@ public interface RecipientRepository extends JpaRepository<Recipient, Long> {
     List<Recipient> findByActiveTrue();
 
     boolean existsByEmail(String email);
+    Optional<Recipient> findByEmailIgnoreCase(String email);
 
     @Query("SELECT r FROM Recipient r WHERE " +
            "(:search IS NULL OR :search = '' OR " +

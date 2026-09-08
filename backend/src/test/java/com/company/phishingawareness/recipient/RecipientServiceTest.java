@@ -87,4 +87,22 @@ class RecipientServiceTest {
 
         assertThat(page.getTotalElements()).isEqualTo(2);
     }
+
+    @Test
+    void importBatch_createsUpdatesAndReportsInvalidRows() {
+        var existing = recipientService.create(new RecipientService.CreateRequest("Nombre anterior", "exists@test.com", false));
+        var result = recipientService.importBatch(new RecipientService.BatchImportRequest(List.of(
+                new RecipientService.BatchRecipientRequest(2, "Nuevo", "new@test.com"),
+                new RecipientService.BatchRecipientRequest(3, "Nombre actualizado", "EXISTS@test.com"),
+                new RecipientService.BatchRecipientRequest(4, "", "missing-name@test.com"),
+                new RecipientService.BatchRecipientRequest(5, "Duplicado", "new@test.com")
+        )));
+
+        assertThat(result.successCount()).isEqualTo(2);
+        assertThat(result.createdCount()).isEqualTo(1);
+        assertThat(result.updatedCount()).isEqualTo(1);
+        assertThat(result.failedItems()).extracting(RecipientService.BatchImportFailure::row).containsExactly(4, 5);
+        assertThat(recipientService.findById(existing.getId()).getName()).isEqualTo("Nombre actualizado");
+        assertThat(recipientService.findById(existing.getId()).getActive()).isTrue();
+    }
 }
