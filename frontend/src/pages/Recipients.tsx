@@ -10,7 +10,13 @@ const emptyForm = { name: '', email: '', active: true }
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 type CsvRow = { row: number; name: string; email: string; reason?: string }
 
-function normalize(value: string) { return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase() }
+function normalize(value: string) {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+}
+
+function headerIndex(headers: string[], aliases: string[]) {
+  return headers.findIndex(header => aliases.some(alias => header === alias || header.startsWith(`${alias} `)))
+}
 
 function parseCsv(text: string): CsvRow[] {
   const firstLine = text.split(/\r?\n/, 1)[0] || ''
@@ -26,12 +32,19 @@ function parseCsv(text: string): CsvRow[] {
   row.push(value.trim()); if (row.some(cell => cell)) values.push(row)
   if (!values.length) return []
   const headers = (values[0] || []).map(normalize)
-  const nameColumn = headers.findIndex(header => ['nombre', 'name'].includes(header))
-  const emailColumn = headers.findIndex(header => ['email', 'correo'].includes(header))
-  const hasHeader = nameColumn >= 0 && emailColumn >= 0
+  const nameColumn = headerIndex(headers, ['nombre completo', 'full name', 'nombre', 'name'])
+  const firstNameColumn = headerIndex(headers, ['first name', 'primer nombre', 'nombres'])
+  const lastNameColumn = headerIndex(headers, ['last name', 'apellido', 'apellidos'])
+  const emailColumn = headerIndex(headers, ['email address', 'correo electronico', 'direccion de correo electronico', 'email', 'correo'])
+  const hasHeader = emailColumn >= 0 && (nameColumn >= 0 || firstNameColumn >= 0)
   const seen = new Set<string>()
   return values.slice(hasHeader ? 1 : 0).map((cells, index) => {
-    const name = cells[hasHeader ? nameColumn : 0] || ''
+    const name = hasHeader
+      ? [
+          cells[nameColumn >= 0 ? nameColumn : firstNameColumn],
+          nameColumn >= 0 ? '' : cells[lastNameColumn],
+        ].filter(Boolean).join(' ')
+      : cells[0] || ''
     const email = (cells[hasHeader ? emailColumn : 1] || '').trim().toLowerCase()
     const rowNumber = index + (hasHeader ? 2 : 1)
     const reason = !name.trim() ? 'Nombre requerido' : !emailPattern.test(email) ? 'Email inválido' : seen.has(email) ? 'Email repetido en archivo' : undefined
@@ -48,7 +61,7 @@ function ImportDialog({ onClose, onImported }: { onClose: () => void; onImported
   const readFile = async (event: ChangeEvent<HTMLInputElement>) => { const file = event.target.files?.[0]; if (!file) return; setFileName(file.name); setRows(parseCsv(await file.text())); setResult(null); event.target.value = '' }
   const validRows = rows.filter(row => !row.reason)
   const failures = result?.failedItems || rows.filter(row => row.reason).map(row => ({ ...row, reason: row.reason || '' }))
-  return <div className="fixed inset-0 z-50 grid place-items-center bg-[#102a43]/45 p-4" role="dialog" aria-modal="true" aria-labelledby="import-title"><section className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl"><div className="flex items-start justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[.15em] text-[#d95d39]">Audiencia</p><h2 id="import-title" className="mt-1 font-serif text-2xl text-[#102a43]">Importar destinatarios CSV</h2></div><Button variant="muted" onClick={onClose}>Cerrar</Button></div><p className="mt-3 text-sm text-slate-600">Acepta columnas <b>nombre,email</b>, <b>name,email</b> o <b>nombre,correo</b>. Sin cabecera: primera y segunda columna.</p><label className="mt-5 flex cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center transition hover:border-[#d95d39] hover:bg-orange-50"><span><b className="block text-[#102a43]">Seleccionar archivo CSV</b><span className="mt-1 block text-sm text-slate-500">Excel: Guardar como CSV</span></span><input type="file" accept=".csv,text/csv" className="sr-only" onChange={readFile} /></label>{fileName ? <p className="mt-3 text-sm text-slate-500">Archivo: {fileName} · {rows.length} filas detectadas</p> : null}{rows.length ? <><div className="mt-5 overflow-x-auto rounded-xl border border-slate-200"><table className="w-full text-left text-sm"><thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="p-3">Fila</th><th className="p-3">Nombre</th><th className="p-3">Email</th><th className="p-3">Validación</th></tr></thead><tbody>{rows.slice(0, 5).map(row => <tr key={row.row} className="border-t border-slate-100"><td className="p-3">{row.row}</td><td className="p-3">{row.name || '—'}</td><td className="p-3">{row.email || '—'}</td><td className={`p-3 font-semibold ${row.reason ? 'text-red-700' : 'text-emerald-700'}`}>{row.reason || 'Lista'}</td></tr>)}</tbody></table></div>{rows.length > 5 ? <p className="mt-2 text-xs text-slate-500">Vista previa: primeras 5 de {rows.length} filas.</p> : null}</> : null}{result ? <div className="mt-5 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-900"><b>{result.successCount} importados</b> · {result.createdCount} nuevos · {result.updatedCount} actualizados</div> : null}{importBatch.error ? <p className="mt-4 text-sm text-red-700">{errorText(importBatch.error)}</p> : null}{failures.length ? <div className="mt-4 rounded-xl bg-red-50 p-4 text-sm text-red-900"><b>{failures.length} filas omitidas</b><ul className="mt-2 grid gap-1">{failures.slice(0, 10).map(failure => <li key={`${failure.row}-${failure.email}`}>Fila {failure.row}: {failure.reason}</li>)}</ul>{failures.length > 10 ? <p className="mt-2">Mostrando 10 errores.</p> : null}</div> : null}<div className="mt-6 flex flex-wrap justify-end gap-3"><Button variant="muted" onClick={onClose}>Cerrar</Button><Button onClick={() => importBatch.mutate()} disabled={!validRows.length || importBatch.isPending}>{importBatch.isPending ? 'Importando...' : `Importar ${validRows.length} destinatarios`}</Button></div></section></div>
+  return <div className="fixed inset-0 z-50 grid place-items-center bg-[#102a43]/45 p-4" role="dialog" aria-modal="true" aria-labelledby="import-title"><section className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl"><div className="flex items-start justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[.15em] text-[#d95d39]">Audiencia</p><h2 id="import-title" className="mt-1 font-serif text-2xl text-[#102a43]">Importar destinatarios CSV</h2></div><Button variant="muted" onClick={onClose}>Cerrar</Button></div><p className="mt-3 text-sm text-slate-600">Acepta <b>nombre,email</b>, <b>name,email</b> y exportación Google Workspace: <b>First Name, Last Name, Email Address</b>. Sin cabecera: primera y segunda columna.</p><label className="mt-5 flex cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center transition hover:border-[#d95d39] hover:bg-orange-50"><span><b className="block text-[#102a43]">Seleccionar archivo CSV</b><span className="mt-1 block text-sm text-slate-500">Excel: Guardar como CSV</span></span><input type="file" accept=".csv,text/csv" className="sr-only" onChange={readFile} /></label>{fileName ? <p className="mt-3 text-sm text-slate-500">Archivo: {fileName} · {rows.length} filas detectadas</p> : null}{rows.length ? <><div className="mt-5 overflow-x-auto rounded-xl border border-slate-200"><table className="w-full text-left text-sm"><thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="p-3">Fila</th><th className="p-3">Nombre</th><th className="p-3">Email</th><th className="p-3">Validación</th></tr></thead><tbody>{rows.slice(0, 5).map(row => <tr key={row.row} className="border-t border-slate-100"><td className="p-3">{row.row}</td><td className="p-3">{row.name || '—'}</td><td className="p-3">{row.email || '—'}</td><td className={`p-3 font-semibold ${row.reason ? 'text-red-700' : 'text-emerald-700'}`}>{row.reason || 'Lista'}</td></tr>)}</tbody></table></div>{rows.length > 5 ? <p className="mt-2 text-xs text-slate-500">Vista previa: primeras 5 de {rows.length} filas.</p> : null}</> : null}{result ? <div className="mt-5 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-900"><b>{result.successCount} importados</b> · {result.createdCount} nuevos · {result.updatedCount} actualizados</div> : null}{importBatch.error ? <p className="mt-4 text-sm text-red-700">{errorText(importBatch.error)}</p> : null}{failures.length ? <div className="mt-4 rounded-xl bg-red-50 p-4 text-sm text-red-900"><b>{failures.length} filas omitidas</b><ul className="mt-2 grid gap-1">{failures.slice(0, 10).map(failure => <li key={`${failure.row}-${failure.email}`}>Fila {failure.row}: {failure.reason}</li>)}</ul>{failures.length > 10 ? <p className="mt-2">Mostrando 10 errores.</p> : null}</div> : null}<div className="mt-6 flex flex-wrap justify-end gap-3"><Button variant="muted" onClick={onClose}>Cerrar</Button><Button onClick={() => importBatch.mutate()} disabled={!validRows.length || importBatch.isPending}>{importBatch.isPending ? 'Importando...' : `Importar ${validRows.length} destinatarios`}</Button></div></section></div>
 }
 
 export default function Recipients() {
