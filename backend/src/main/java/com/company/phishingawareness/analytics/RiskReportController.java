@@ -24,4 +24,14 @@ public class RiskReportController {
         @RequestParam(required = false) String search) {
         return service.findAll(minScore, level, search);
     }
+
+    @GetMapping("/trend")
+    public List<RiskReportService.TrendPoint> trend() {
+        return service.trend();
+    }
+
+    @GetMapping("/risk-domains")
+    public List<RiskReportService.DomainRiskRow> riskDomains() {
+        return service.riskByDomain();
+    }
 }

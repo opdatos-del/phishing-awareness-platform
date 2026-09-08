@@ -42,6 +42,18 @@ public class CampaignController {
         );
     }
 
+    @GetMapping("/cards")
+    public PagedResponse<CampaignService.CampaignCardSummary> cards(
+            @RequestParam(defaultValue = "") String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Page<CampaignService.CampaignCardSummary> result = service.cardSummaries(search, PageRequest.of(page, size));
+        return PagedResponse.of(
+            result.getContent(), result.getNumber(), result.getSize(),
+            result.getTotalElements(), result.getTotalPages()
+        );
+    }
+
     @GetMapping("/{id}")
     public Campaign getById(@PathVariable Long id) {
         return service.findById(id);

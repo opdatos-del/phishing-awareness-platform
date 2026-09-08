@@ -5,9 +5,13 @@ export type Recipient = { id: number; name: string; email: string; active: boole
 export type Template = { id: number; name: string; description?: string; category: string; difficulty: string; subject: string; html: string; active: boolean }
 export type LandingPage = { id: number; name: string; slug: string; category: string; difficulty: string; html: string; active: boolean }
 export type Campaign = { id: number; name: string; description?: string; status: string; template: Template; landingPage: LandingPage; scheduledAt?: string; startedAt?: string; sentAt?: string }
+export type CampaignCard = { id: number; name: string; description?: string; status: string; templateName: string; landingPageName: string; createdAt: string; scheduledAt?: string; startedAt?: string; totalSent: number; totalOpened: number; totalClicked: number; totalSubmitted: number; totalTrainingCompleted: number }
 export type CampaignRecipient = { id: number; recipientId: number; recipientName: string; recipientEmail: string; trackingToken: string; status: string; sentAt?: string; openedAt?: string; clickedAt?: string; submittedAt?: string; reportedAt?: string; trainingViewedAt?: string; deliveredAt?: string; trainingCompletedAt?: string }
 export type CampaignStats = { totalSent: number; totalOpened: number; totalClicked: number; totalSubmitted: number; totalReported: number; totalTrainingViewed: number; totalTrainingCompleted: number; openRate: number; clickRate: number; submitRate: number; trainingRate: number }
-export type Dashboard = { activeCampaigns: number; totalCampaigns: number; totalSent: number; totalOpened: number; totalClicked: number; totalSubmitted: number; totalTrainingViewed: number; recentCampaigns: { id: number; name: string; status: string; createdAt: string }[] }
+export type CampaignEvent = { id: number; type: string; eventTime: string; recipientName: string; recipientEmail: string }
+export type TrendPoint = { date: string; submissions: number; trainingCompleted: number }
+export type DomainRiskRow = { domain: string; people: number; submissions: number; submitRate: number; averageRiskScore: number }
+export type Dashboard = { activeCampaigns: number; totalCampaigns: number; totalSent: number; totalOpened: number; totalClicked: number; totalSubmitted: number; totalTrainingViewed: number; totalTrainingCompleted: number; recentCampaigns: { id: number; name: string; status: string; createdAt: string }[] }
 export type AdminUser = { id: number; username: string; role: string; active: boolean }
 export type RiskReportRow = { recipientId: number; name: string; email: string; campaignsReceived: number; opens: number; clicks: number; submits: number; reports: number; firstSubmittedAt?: string; lastSubmittedAt?: string; riskScore: number; riskLevel: 'BAJO' | 'MEDIO' | 'ALTO' | 'CRITICO' }
 

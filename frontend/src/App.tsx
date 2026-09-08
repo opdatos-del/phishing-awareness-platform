@@ -2,8 +2,12 @@ import { useEffect, useState } from 'react'
 import { Navigate, Route, Routes } from 'react-router'
 import Login from './pages/Login'
 import Layout from './pages/Layout'
-import { Campaigns, Dashboard, LandingPages, Recipients, RiskReport, Templates, Users } from './pages/AdminPages'
+import { LandingPages, Templates, Users } from './pages/AdminPages'
+import Campaigns from './pages/Campaigns'
 import CampaignDetail from './pages/CampaignDetail'
+import Dashboard from './pages/Dashboard'
+import RiskReport from './pages/RiskReport'
+import Recipients from './pages/Recipients'
 
 export default function App() {
   const [authenticated, setAuthenticated] = useState(Boolean(localStorage.getItem('paware.jwt')))

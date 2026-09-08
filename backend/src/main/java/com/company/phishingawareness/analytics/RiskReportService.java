@@ -1,6 +1,7 @@
 package com.company.phishingawareness.analytics;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -49,12 +50,45 @@ public class RiskReportService {
             .toList();
     }
 
+    public List<TrendPoint> trend() {
+        Map<LocalDate, long[]> totals = new java.util.TreeMap<>();
+        repository.findAllForRiskReport(Campaign.Status.DRAFT).forEach(campaignRecipient -> {
+            if (campaignRecipient.getSubmittedAt() != null) {
+                totals.computeIfAbsent(campaignRecipient.getSubmittedAt().toLocalDate(), ignored -> new long[2])[0]++;
+            }
+            if (campaignRecipient.getTrainingCompletedAt() != null) {
+                totals.computeIfAbsent(campaignRecipient.getTrainingCompletedAt().toLocalDate(), ignored -> new long[2])[1]++;
+            }
+        });
+        return totals.entrySet().stream()
+            .map(entry -> new TrendPoint(entry.getKey(), entry.getValue()[0], entry.getValue()[1]))
+            .toList();
+    }
+
+    public List<DomainRiskRow> riskByDomain() {
+        Map<String, List<RiskReportRow>> byDomain = new java.util.TreeMap<>();
+        findAll(null, null, null).forEach(row -> byDomain
+            .computeIfAbsent(row.email().substring(row.email().indexOf('@') + 1), ignored -> new java.util.ArrayList<>())
+            .add(row));
+        return byDomain.entrySet().stream().map(entry -> {
+            List<RiskReportRow> rows = entry.getValue();
+            long submits = rows.stream().mapToLong(RiskReportRow::submits).sum();
+            double averageScore = rows.stream().mapToInt(RiskReportRow::riskScore).average().orElse(0);
+            long campaigns = rows.stream().mapToLong(RiskReportRow::campaignsReceived).sum();
+            return new DomainRiskRow(entry.getKey(), rows.size(), submits,
+                campaigns == 0 ? 0 : Math.round(submits * 10000.0 / campaigns) / 100.0,
+                Math.round(averageScore * 100.0) / 100.0);
+        }).sorted(Comparator.comparingDouble(DomainRiskRow::averageRiskScore).reversed()).toList();
+    }
+
     public record RiskReportRow(
         Long recipientId, String name, String email, long campaignsReceived,
         long opens, long clicks, long submits, long reports,
         LocalDateTime firstSubmittedAt, LocalDateTime lastSubmittedAt,
         int riskScore, String riskLevel
     ) { }
+    public record TrendPoint(LocalDate date, long submissions, long trainingCompleted) { }
+    public record DomainRiskRow(String domain, int people, long submissions, double submitRate, double averageRiskScore) { }
 
     private static final class Aggregate {
         private final Long recipientId;

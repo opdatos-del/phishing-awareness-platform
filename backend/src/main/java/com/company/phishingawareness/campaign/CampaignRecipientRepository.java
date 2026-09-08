@@ -14,6 +14,7 @@ public interface CampaignRecipientRepository extends JpaRepository<CampaignRecip
     @Query("SELECT cr FROM CampaignRecipient cr JOIN FETCH cr.recipient JOIN FETCH cr.campaign c WHERE c.status <> :draftStatus")
     List<CampaignRecipient> findAllForRiskReport(@Param("draftStatus") Campaign.Status draftStatus);
     List<CampaignRecipient> findByCampaignId(Long campaignId);
+    List<CampaignRecipient> findByCampaignIdIn(List<Long> campaignIds);
 
     @EntityGraph(attributePaths = {"campaign", "campaign.landingPage"})
     Optional<CampaignRecipient> findByTrackingToken(String trackingToken);
@@ -27,6 +28,7 @@ public interface CampaignRecipientRepository extends JpaRepository<CampaignRecip
     long countByClickedAtIsNotNull();
     long countBySubmittedAtIsNotNull();
     long countByTrainingViewedAtIsNotNull();
+    long countByTrainingCompletedAtIsNotNull();
     long countByCampaignIdAndSentAtIsNotNull(Long campaignId);
     long countByCampaignIdAndOpenedAtIsNotNull(Long campaignId);
     long countByCampaignIdAndClickedAtIsNotNull(Long campaignId);

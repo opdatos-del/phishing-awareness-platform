@@ -48,6 +48,33 @@ public class CampaignService {
         return campaignRepo.search(search, pageable);
     }
 
+    @Transactional(readOnly = true)
+    public Page<CampaignCardSummary> cardSummaries(String search, Pageable pageable) {
+        Page<Campaign> campaigns = campaignRepo.search(search, pageable);
+        List<Long> campaignIds = campaigns.getContent().stream().map(Campaign::getId).toList();
+        java.util.Map<Long, long[]> totals = new java.util.HashMap<>();
+
+        if (!campaignIds.isEmpty()) {
+            crRepo.findByCampaignIdIn(campaignIds).forEach(recipient -> {
+                long[] metrics = totals.computeIfAbsent(recipient.getCampaign().getId(), ignored -> new long[5]);
+                if (recipient.getSentAt() != null) metrics[0]++;
+                if (recipient.getOpenedAt() != null) metrics[1]++;
+                if (recipient.getClickedAt() != null) metrics[2]++;
+                if (recipient.getSubmittedAt() != null) metrics[3]++;
+                if (recipient.getTrainingCompletedAt() != null) metrics[4]++;
+            });
+        }
+
+        return campaigns.map(campaign -> {
+            long[] metrics = totals.getOrDefault(campaign.getId(), new long[5]);
+            return new CampaignCardSummary(
+                campaign.getId(), campaign.getName(), campaign.getDescription(), campaign.getStatus().name(),
+                campaign.getTemplate().getName(), campaign.getLandingPage().getName(), campaign.getCreatedAt(),
+                campaign.getScheduledAt(), campaign.getStartedAt(), metrics[0], metrics[1], metrics[2], metrics[3], metrics[4]
+            );
+        });
+    }
+
     public Campaign findById(Long id) {
         return campaignRepo.findDetailedById(id)
                 .orElseThrow(() -> new NotFoundException("Campaign not found with id: " + id));
@@ -175,8 +202,14 @@ public class CampaignService {
     public record EventResponse(Long id, String type, java.time.LocalDateTime eventTime,
                                 String recipientName, String recipientEmail) {}
     public record CampaignSummary(Long id, String name, String status, java.time.LocalDateTime createdAt) {}
+    public record CampaignCardSummary(Long id, String name, String description, String status,
+                                      String templateName, String landingPageName,
+                                      java.time.LocalDateTime createdAt, java.time.LocalDateTime scheduledAt,
+                                      java.time.LocalDateTime startedAt, long totalSent, long totalOpened,
+                                      long totalClicked, long totalSubmitted, long totalTrainingCompleted) {}
     public record DashboardSummary(long activeCampaigns, long totalCampaigns, long totalSent, long totalOpened,
                                    long totalClicked, long totalSubmitted, long totalTrainingViewed,
+                                   long totalTrainingCompleted,
                                    List<CampaignSummary> recentCampaigns) {}
     public record LaunchRequest(java.time.LocalDateTime scheduledAt) {}
 
@@ -256,7 +289,7 @@ public class CampaignService {
         return new DashboardSummary(campaignRepo.countByStatus(Campaign.Status.RUNNING), campaignRepo.count(),
                 crRepo.countBySentAtIsNotNull(), crRepo.countByOpenedAtIsNotNull(),
                 crRepo.countByClickedAtIsNotNull(), crRepo.countBySubmittedAtIsNotNull(),
-                crRepo.countByTrainingViewedAtIsNotNull(), recent);
+                crRepo.countByTrainingViewedAtIsNotNull(), crRepo.countByTrainingCompletedAtIsNotNull(), recent);
     }
 
     private static double rate(long numerator, long denominator) {
