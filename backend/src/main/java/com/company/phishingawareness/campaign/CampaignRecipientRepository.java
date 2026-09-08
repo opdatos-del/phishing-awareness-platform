@@ -11,7 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface CampaignRecipientRepository extends JpaRepository<CampaignRecipient, Long> {
-    @Query("SELECT cr FROM CampaignRecipient cr JOIN FETCH cr.recipient JOIN FETCH cr.campaign c WHERE c.status <> :draftStatus")
+    @Query("SELECT cr FROM CampaignRecipient cr JOIN FETCH cr.recipient JOIN FETCH cr.campaign c JOIN FETCH c.template JOIN FETCH c.landingPage WHERE c.status <> :draftStatus")
     List<CampaignRecipient> findAllForRiskReport(@Param("draftStatus") Campaign.Status draftStatus);
     List<CampaignRecipient> findByCampaignId(Long campaignId);
     List<CampaignRecipient> findByCampaignIdIn(List<Long> campaignIds);

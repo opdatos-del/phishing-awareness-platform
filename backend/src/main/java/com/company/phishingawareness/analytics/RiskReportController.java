@@ -34,4 +34,9 @@ public class RiskReportController {
     public List<RiskReportService.DomainRiskRow> riskDomains() {
         return service.riskByDomain();
     }
+
+    @GetMapping("/insights")
+    public RiskReportService.AnalyticsInsights insights() {
+        return service.insights();
+    }
 }

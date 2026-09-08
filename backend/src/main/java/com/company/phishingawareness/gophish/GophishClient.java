@@ -1,6 +1,8 @@
 package com.company.phishingawareness.gophish;
 
 import java.time.Duration;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
@@ -104,13 +106,13 @@ public class GophishClient {
         campaignPayload.put("groups", List.of(Map.of("name", group.get("name"))));
         campaignPayload.put("url", gophishUrl);
         if (scheduledAt != null && scheduledAt.isAfter(java.time.LocalDateTime.now())) {
-            campaignPayload.put("launch_date", scheduledAt.toString() + "Z");
+            campaignPayload.put("launch_date", goPhishDate(scheduledAt));
         }
         if (durationMinutes != null) {
             java.time.LocalDateTime launchAt = scheduledAt != null && scheduledAt.isAfter(java.time.LocalDateTime.now())
                     ? scheduledAt : java.time.LocalDateTime.now().plusSeconds(5);
-            campaignPayload.put("launch_date", launchAt.toString() + "Z");
-            campaignPayload.put("send_by_date", launchAt.plusMinutes(durationMinutes).toString() + "Z");
+            campaignPayload.put("launch_date", goPhishDate(launchAt));
+            campaignPayload.put("send_by_date", goPhishDate(launchAt.plusMinutes(durationMinutes)));
         }
         Map<String, Object> gophishCampaign = post("/api/campaigns/", campaignPayload);
 
@@ -218,6 +220,10 @@ public class GophishClient {
     private static Long asLong(Object value) {
         if (value instanceof Number number) return number.longValue();
         return value == null ? null : Long.valueOf(value.toString());
+    }
+
+    private static String goPhishDate(java.time.LocalDateTime value) {
+        return value.atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
     }
 
     public record ProvisionedCampaign(Long id) {}

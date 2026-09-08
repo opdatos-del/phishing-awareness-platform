@@ -226,10 +226,10 @@ public class CampaignService {
                                    long totalClicked, long totalSubmitted, long totalReported, long totalTrainingViewed,
                                    long totalTrainingCompleted,
                                    List<CampaignSummary> recentCampaigns) {}
-    public record LaunchRequest(java.time.LocalDateTime scheduledAt, Integer durationMinutes) {}
+    public record LaunchRequest(java.time.OffsetDateTime scheduledAt, Integer durationMinutes) {}
 
     @Transactional
-    public Campaign launch(Long id, java.time.LocalDateTime scheduledAt, Integer durationMinutes) {
+    public Campaign launch(Long id, java.time.OffsetDateTime scheduledAt, Integer durationMinutes) {
         Campaign campaign = findById(id);
         if (campaign.getStatus() != Campaign.Status.DRAFT) {
             throw new IllegalStateException("Only DRAFT campaigns can be launched");
@@ -241,13 +241,15 @@ public class CampaignService {
             throw new IllegalArgumentException("Duration must be between 1 and 1440 minutes");
         }
 
-        GophishClient.ProvisionedCampaign provisioned = gophishClient.provision(campaign, recipients, scheduledAt, durationMinutes);
+        java.time.LocalDateTime scheduledAtUtc = scheduledAt == null ? null
+                : scheduledAt.withOffsetSameInstant(java.time.ZoneOffset.UTC).toLocalDateTime();
+        GophishClient.ProvisionedCampaign provisioned = gophishClient.provision(campaign, recipients, scheduledAtUtc, durationMinutes);
         campaign.setGophishCampaignId(provisioned.id());
-        java.time.LocalDateTime launchAt = scheduledAt != null && scheduledAt.isAfter(java.time.LocalDateTime.now())
-                ? scheduledAt : java.time.LocalDateTime.now();
+        java.time.LocalDateTime launchAt = scheduledAtUtc != null && scheduledAtUtc.isAfter(java.time.LocalDateTime.now())
+                ? scheduledAtUtc : java.time.LocalDateTime.now();
         campaign.setSendByAt(launchAt.plusMinutes(durationMinutes == null ? 5 : durationMinutes));
-        if (scheduledAt != null && scheduledAt.isAfter(java.time.LocalDateTime.now())) {
-            campaign.setScheduledAt(scheduledAt);
+        if (scheduledAtUtc != null && scheduledAtUtc.isAfter(java.time.LocalDateTime.now())) {
+            campaign.setScheduledAt(scheduledAtUtc);
             campaign.setStatus(Campaign.Status.SCHEDULED);
         } else {
             markRunning(campaign, recipients);

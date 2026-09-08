@@ -2,6 +2,7 @@ package com.company.phishingawareness.analytics;
 
 import java.time.LocalDateTime;
 import java.time.LocalDate;
+import java.time.Duration;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -81,6 +82,48 @@ public class RiskReportService {
         }).sorted(Comparator.comparingDouble(DomainRiskRow::averageRiskScore).reversed()).toList();
     }
 
+    public AnalyticsInsights insights() {
+        List<CampaignRecipient> recipients = repository.findAllForRiskReport(Campaign.Status.DRAFT);
+        Map<String, PerformanceAggregate> templates = new java.util.TreeMap<>();
+        Map<String, PerformanceAggregate> landingPages = new java.util.TreeMap<>();
+        long openedCount = 0;
+        long clickedCount = 0;
+        long openedMinutes = 0;
+        long clickedMinutes = 0;
+
+        for (CampaignRecipient recipient : recipients) {
+            templates.computeIfAbsent(recipient.getCampaign().getTemplate().getName(), PerformanceAggregate::new).add(recipient);
+            landingPages.computeIfAbsent(recipient.getCampaign().getLandingPage().getName(), PerformanceAggregate::new).add(recipient);
+            if (recipient.getSentAt() == null) continue;
+            if (recipient.getOpenedAt() != null) {
+                long minutes = Duration.between(recipient.getSentAt(), recipient.getOpenedAt()).toMinutes();
+                if (minutes >= 0) { openedCount++; openedMinutes += minutes; }
+            }
+            if (recipient.getClickedAt() != null) {
+                long minutes = Duration.between(recipient.getSentAt(), recipient.getClickedAt()).toMinutes();
+                if (minutes >= 0) { clickedCount++; clickedMinutes += minutes; }
+            }
+        }
+
+        List<RetestCandidate> candidates = findAll(null, null, null).stream()
+            .filter(row -> row.submits() > 0 && row.reports() == 0)
+            .map(row -> new RetestCandidate(row.recipientId(), row.name(), row.email(), row.submits(),
+                row.riskScore(), row.lastSubmittedAt()))
+            .sorted(Comparator.comparingInt(RetestCandidate::riskScore).reversed()
+                .thenComparing(RetestCandidate::submits, Comparator.reverseOrder()))
+            .limit(10)
+            .toList();
+
+        return new AnalyticsInsights(
+            templates.values().stream().map(PerformanceAggregate::toRow)
+                .sorted(Comparator.comparingDouble(PerformanceRow::clickRate).reversed()).toList(),
+            landingPages.values().stream().map(PerformanceAggregate::toRow)
+                .sorted(Comparator.comparingDouble(PerformanceRow::submitRate).reversed()).toList(),
+            candidates,
+            new TimingSummary(openedCount, average(openedMinutes, openedCount), clickedCount, average(clickedMinutes, clickedCount))
+        );
+    }
+
     public record RiskReportRow(
         Long recipientId, String name, String email, long campaignsReceived,
         long opens, long clicks, long submits, long reports,
@@ -89,6 +132,43 @@ public class RiskReportService {
     ) { }
     public record TrendPoint(LocalDate date, long submissions, long trainingCompleted) { }
     public record DomainRiskRow(String domain, int people, long submissions, double submitRate, double averageRiskScore) { }
+    public record AnalyticsInsights(List<PerformanceRow> templates, List<PerformanceRow> landingPages,
+                                    List<RetestCandidate> retestCandidates, TimingSummary timing) { }
+    public record PerformanceRow(String name, long sent, long opened, long clicked, long submitted,
+                                 double openRate, double clickRate, double submitRate) { }
+    public record RetestCandidate(Long recipientId, String name, String email, long submits, int riskScore,
+                                  LocalDateTime lastSubmittedAt) { }
+    public record TimingSummary(long openedCount, double averageOpenMinutes, long clickedCount, double averageClickMinutes) { }
+
+    private static double average(long total, long count) {
+        return count == 0 ? 0 : Math.round(total * 100.0 / count) / 100.0;
+    }
+
+    private static final class PerformanceAggregate {
+        private final String name;
+        private long sent;
+        private long opened;
+        private long clicked;
+        private long submitted;
+
+        private PerformanceAggregate(String name) { this.name = name; }
+
+        private void add(CampaignRecipient recipient) {
+            if (recipient.getSentAt() != null) sent++;
+            if (recipient.getOpenedAt() != null) opened++;
+            if (recipient.getClickedAt() != null) clicked++;
+            if (recipient.getSubmittedAt() != null) submitted++;
+        }
+
+        private PerformanceRow toRow() {
+            return new PerformanceRow(name, sent, opened, clicked, submitted,
+                rate(opened, sent), rate(clicked, sent), rate(submitted, sent));
+        }
+    }
+
+    private static double rate(long numerator, long denominator) {
+        return denominator == 0 ? 0 : Math.round(numerator * 10000.0 / denominator) / 100.0;
+    }
 
     private static final class Aggregate {
         private final Long recipientId;
