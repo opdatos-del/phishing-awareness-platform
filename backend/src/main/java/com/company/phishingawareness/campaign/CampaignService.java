@@ -135,6 +135,9 @@ public class CampaignService {
                 log.warn("No se pudo borrar la campaña {} en GoPhish: {}", campaign.getGophishCampaignId(), ex.getMessage());
             }
         }
+        List<CampaignRecipient> recipients = crRepo.findByCampaignId(id);
+        recipients.forEach(cr -> eventRepo.deleteAll(eventRepo.findByCampaignRecipientIdOrderByEventTimeAsc(cr.getId())));
+        crRepo.deleteAll(recipients);
         campaignRepo.delete(campaign);
     }
 

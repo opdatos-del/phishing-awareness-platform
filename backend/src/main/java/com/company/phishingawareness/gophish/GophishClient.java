@@ -104,7 +104,7 @@ public class GophishClient {
         campaignPayload.put("groups", List.of(Map.of("name", group.get("name"))));
         campaignPayload.put("url", gophishUrl);
         if (scheduledAt != null && scheduledAt.isAfter(java.time.LocalDateTime.now())) {
-            campaignPayload.put("launch_date", scheduledAt.toString());
+            campaignPayload.put("launch_date", scheduledAt.toString() + "Z");
         }
         Map<String, Object> gophishCampaign = post("/api/campaigns/", campaignPayload);
 
