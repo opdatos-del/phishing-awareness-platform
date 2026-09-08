@@ -178,8 +178,11 @@ public class GophishClient {
     }
 
     private String toGophishTemplate(String html) {
-        return html.replace("{{TRACKING_URL}}", "{{.URL}}")
-                .replace("{{TRACKING_OPEN_PIXEL}}", "{{.Tracker}}")
+        // Point tracking at the local funnel: target position carries the
+        // local tracking token, so opens/clicks are recorded in our DB even
+        // though this GoPhish build does not expose result-reading endpoints.
+        return html.replace("{{TRACKING_URL}}", publicUrl + "/t/{{.Position}}")
+                .replace("{{TRACKING_OPEN_PIXEL}}", publicUrl + "/api/v1/tracking/{{.Position}}/open")
                 // Landing-only placeholders must never reach GoPhish's template parser.
                 .replace("{{TOKEN}}", "")
                 .replace("{{SLUG}}", "");
