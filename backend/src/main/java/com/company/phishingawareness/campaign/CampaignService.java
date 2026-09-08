@@ -8,6 +8,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.company.phishingawareness.landing.LandingPage;
 import com.company.phishingawareness.landing.LandingPageRepository;
 import com.company.phishingawareness.recipient.Recipient;
@@ -19,6 +22,8 @@ import com.company.phishingawareness.gophish.GophishClient;
 
 @Service
 public class CampaignService {
+
+    private static final Logger log = LoggerFactory.getLogger(CampaignService.class);
 
     private final CampaignRepository campaignRepo;
     private final CampaignRecipientRepository crRepo;
@@ -120,8 +125,15 @@ public class CampaignService {
     @Transactional
     public void delete(Long id) {
         Campaign campaign = findById(id);
-        if (campaign.getStatus() != Campaign.Status.DRAFT) {
-            throw new IllegalStateException("Only DRAFT campaigns can be deleted");
+        if (campaign.getStatus() == Campaign.Status.RUNNING) {
+            throw new IllegalStateException("No se puede eliminar una campaña en curso");
+        }
+        if (campaign.getGophishCampaignId() != null) {
+            try {
+                gophishClient.deleteCampaign(campaign.getGophishCampaignId());
+            } catch (Exception ex) {
+                log.warn("No se pudo borrar la campaña {} en GoPhish: {}", campaign.getGophishCampaignId(), ex.getMessage());
+            }
         }
         campaignRepo.delete(campaign);
     }

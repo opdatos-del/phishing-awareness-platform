@@ -141,6 +141,16 @@ public class GophishClient {
         return (List<Map<String, Object>>) (List<?>) list;
     }
 
+    public void deleteCampaign(Long gophishCampaignId) {
+        if (!isConfigured() || gophishCampaignId == null) return;
+        webClient.delete()
+                .uri(uri -> uri.path("/api/campaigns/" + gophishCampaignId).queryParam("api_key", apiKey).build())
+                .header("Authorization", apiKey)
+                .retrieve()
+                .toBodilessEntity()
+                .block(Duration.ofSeconds(20));
+    }
+
     private Map<String, Object> post(String path, Object payload) {
         Map<?, ?> body = webClient.post()
                 .uri(uri -> uri.path(path).queryParam("api_key", apiKey).build())
