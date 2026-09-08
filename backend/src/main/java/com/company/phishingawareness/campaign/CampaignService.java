@@ -223,7 +223,7 @@ public class CampaignService {
                                       java.time.LocalDateTime startedAt, long totalSent, long totalOpened,
                                       long totalClicked, long totalSubmitted, long totalTrainingCompleted) {}
     public record DashboardSummary(long activeCampaigns, long totalCampaigns, long totalSent, long totalOpened,
-                                   long totalClicked, long totalSubmitted, long totalTrainingViewed,
+                                   long totalClicked, long totalSubmitted, long totalReported, long totalTrainingViewed,
                                    long totalTrainingCompleted,
                                    List<CampaignSummary> recentCampaigns) {}
     public record LaunchRequest(java.time.LocalDateTime scheduledAt, Integer durationMinutes) {}
@@ -243,6 +243,9 @@ public class CampaignService {
 
         GophishClient.ProvisionedCampaign provisioned = gophishClient.provision(campaign, recipients, scheduledAt, durationMinutes);
         campaign.setGophishCampaignId(provisioned.id());
+        java.time.LocalDateTime launchAt = scheduledAt != null && scheduledAt.isAfter(java.time.LocalDateTime.now())
+                ? scheduledAt : java.time.LocalDateTime.now();
+        campaign.setSendByAt(launchAt.plusMinutes(durationMinutes == null ? 5 : durationMinutes));
         if (scheduledAt != null && scheduledAt.isAfter(java.time.LocalDateTime.now())) {
             campaign.setScheduledAt(scheduledAt);
             campaign.setStatus(Campaign.Status.SCHEDULED);
@@ -254,8 +257,20 @@ public class CampaignService {
 
     @Transactional
     public void activateScheduledCampaigns() {
-        campaignRepo.findByStatusAndScheduledAtLessThanEqual(Campaign.Status.SCHEDULED, java.time.LocalDateTime.now())
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        campaignRepo.findByStatusAndScheduledAtLessThanEqual(Campaign.Status.SCHEDULED, now)
                 .forEach(campaign -> markRunning(campaign, crRepo.findByCampaignId(campaign.getId())));
+        campaignRepo.findByStatusAndSendByAtLessThanEqual(Campaign.Status.RUNNING, now)
+                .forEach(campaign -> {
+                    campaign.setStatus(Campaign.Status.COMPLETED);
+                    campaign.setCompletedAt(now);
+                });
+        campaignRepo.findByStatusAndSendByAtIsNullAndStartedAtLessThanEqual(
+                        Campaign.Status.RUNNING, now.minusMinutes(5))
+                .forEach(campaign -> {
+                    campaign.setStatus(Campaign.Status.COMPLETED);
+                    campaign.setCompletedAt(now);
+                });
     }
 
     private void markRunning(Campaign campaign, List<CampaignRecipient> recipients) {
@@ -308,7 +323,8 @@ public class CampaignService {
         return new DashboardSummary(campaignRepo.countByStatus(Campaign.Status.RUNNING), campaignRepo.count(),
                 crRepo.countBySentAtIsNotNull(), crRepo.countByOpenedAtIsNotNull(),
                 crRepo.countByClickedAtIsNotNull(), crRepo.countBySubmittedAtIsNotNull(),
-                crRepo.countByTrainingViewedAtIsNotNull(), crRepo.countByTrainingCompletedAtIsNotNull(), recent);
+                crRepo.countByReportedAtIsNotNull(), crRepo.countByTrainingViewedAtIsNotNull(),
+                crRepo.countByTrainingCompletedAtIsNotNull(), recent);
     }
 
     private static double rate(long numerator, long denominator) {

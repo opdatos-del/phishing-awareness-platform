@@ -27,6 +27,7 @@ public interface CampaignRecipientRepository extends JpaRepository<CampaignRecip
     long countByOpenedAtIsNotNull();
     long countByClickedAtIsNotNull();
     long countBySubmittedAtIsNotNull();
+    long countByReportedAtIsNotNull();
     long countByTrainingViewedAtIsNotNull();
     long countByTrainingCompletedAtIsNotNull();
     long countByCampaignIdAndSentAtIsNotNull(Long campaignId);

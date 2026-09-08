@@ -21,5 +21,7 @@ public interface CampaignRepository extends JpaRepository<Campaign, Long> {
     long countByStatus(Campaign.Status status);
     List<Campaign> findTop5ByOrderByCreatedAtDesc();
     List<Campaign> findByStatusAndScheduledAtLessThanEqual(Campaign.Status status, java.time.LocalDateTime at);
+    List<Campaign> findByStatusAndSendByAtLessThanEqual(Campaign.Status status, java.time.LocalDateTime at);
+    List<Campaign> findByStatusAndSendByAtIsNullAndStartedAtLessThanEqual(Campaign.Status status, java.time.LocalDateTime at);
     List<Campaign> findByGophishCampaignIdIsNotNull();
 }

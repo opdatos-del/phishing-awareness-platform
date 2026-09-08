@@ -54,6 +54,9 @@ public class Campaign extends BaseEntity {
     @Column(name = "sent_at")
     private java.time.LocalDateTime sentAt;
 
+    @Column(name = "send_by_at")
+    private java.time.LocalDateTime sendByAt;
+
     @Column(name = "gophish_campaign_id", unique = true)
     private Long gophishCampaignId;
 
@@ -82,6 +85,8 @@ public class Campaign extends BaseEntity {
     public void setCompletedAt(java.time.LocalDateTime completedAt) { this.completedAt = completedAt; }
     public java.time.LocalDateTime getSentAt() { return sentAt; }
     public void setSentAt(java.time.LocalDateTime sentAt) { this.sentAt = sentAt; }
+    public java.time.LocalDateTime getSendByAt() { return sendByAt; }
+    public void setSendByAt(java.time.LocalDateTime sendByAt) { this.sendByAt = sendByAt; }
     public Long getGophishCampaignId() { return gophishCampaignId; }
     public void setGophishCampaignId(Long gophishCampaignId) { this.gophishCampaignId = gophishCampaignId; }
 }
