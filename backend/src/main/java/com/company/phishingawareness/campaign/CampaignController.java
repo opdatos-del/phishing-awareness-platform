@@ -102,6 +102,7 @@ public class CampaignController {
     @PostMapping("/{id}/launch")
     public Campaign launch(@PathVariable Long id,
                            @RequestBody(required = false) CampaignService.LaunchRequest request) {
-        return service.launch(id, request == null ? null : request.scheduledAt());
+        return service.launch(id, request == null ? null : request.scheduledAt(),
+                request == null ? null : request.durationMinutes());
     }
 }

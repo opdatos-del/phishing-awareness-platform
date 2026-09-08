@@ -49,7 +49,7 @@ public class GophishClient {
     }
 
     public ProvisionedCampaign provision(Campaign campaign, List<CampaignRecipient> recipients,
-                                         java.time.LocalDateTime scheduledAt) {
+                                         java.time.LocalDateTime scheduledAt, Integer durationMinutes) {
         requireConfigured();
 
         String suffix = "paware-" + campaign.getId();
@@ -105,6 +105,12 @@ public class GophishClient {
         campaignPayload.put("url", gophishUrl);
         if (scheduledAt != null && scheduledAt.isAfter(java.time.LocalDateTime.now())) {
             campaignPayload.put("launch_date", scheduledAt.toString() + "Z");
+        }
+        if (durationMinutes != null) {
+            java.time.LocalDateTime launchAt = scheduledAt != null && scheduledAt.isAfter(java.time.LocalDateTime.now())
+                    ? scheduledAt : java.time.LocalDateTime.now().plusSeconds(5);
+            campaignPayload.put("launch_date", launchAt.toString() + "Z");
+            campaignPayload.put("send_by_date", launchAt.plusMinutes(durationMinutes).toString() + "Z");
         }
         Map<String, Object> gophishCampaign = post("/api/campaigns/", campaignPayload);
 

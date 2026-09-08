@@ -174,7 +174,7 @@ class TrackingControllerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getHeaders().getContentType()).isEqualTo(MediaType.TEXT_HTML);
-        assertThat((String) response.getBody()).contains("simulacion de phishing");
+        assertThat((String) response.getBody()).contains("simulación de phishing");
         assertThat(cr.getTrainingViewedAt()).isNotNull();
         verify(campaignEventRepository).save(any(CampaignEvent.class));
     }

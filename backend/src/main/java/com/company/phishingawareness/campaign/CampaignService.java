@@ -226,10 +226,10 @@ public class CampaignService {
                                    long totalClicked, long totalSubmitted, long totalTrainingViewed,
                                    long totalTrainingCompleted,
                                    List<CampaignSummary> recentCampaigns) {}
-    public record LaunchRequest(java.time.LocalDateTime scheduledAt) {}
+    public record LaunchRequest(java.time.LocalDateTime scheduledAt, Integer durationMinutes) {}
 
     @Transactional
-    public Campaign launch(Long id, java.time.LocalDateTime scheduledAt) {
+    public Campaign launch(Long id, java.time.LocalDateTime scheduledAt, Integer durationMinutes) {
         Campaign campaign = findById(id);
         if (campaign.getStatus() != Campaign.Status.DRAFT) {
             throw new IllegalStateException("Only DRAFT campaigns can be launched");
@@ -237,7 +237,11 @@ public class CampaignService {
         List<CampaignRecipient> recipients = crRepo.findByCampaignId(id);
         if (recipients.isEmpty()) throw new IllegalStateException("Add at least one recipient before launching");
 
-        GophishClient.ProvisionedCampaign provisioned = gophishClient.provision(campaign, recipients, scheduledAt);
+        if (durationMinutes != null && (durationMinutes < 1 || durationMinutes > 1440)) {
+            throw new IllegalArgumentException("Duration must be between 1 and 1440 minutes");
+        }
+
+        GophishClient.ProvisionedCampaign provisioned = gophishClient.provision(campaign, recipients, scheduledAt, durationMinutes);
         campaign.setGophishCampaignId(provisioned.id());
         if (scheduledAt != null && scheduledAt.isAfter(java.time.LocalDateTime.now())) {
             campaign.setScheduledAt(scheduledAt);
