@@ -50,6 +50,7 @@ export default defineRailway(() => {
   const mysqlApp = service("db-mysql", {
     source: image("mysql:8.0"),
     replicas: { "iad": 1 },
+    deploy: { startCommand: "mysqld --bind-address=::" },
     env: {
       MYSQL_DATABASE: "phishing_awareness",
       MYSQL_PASSWORD: preserve(),
