@@ -54,7 +54,7 @@ export default defineRailway(() => {
       dockerfilePath: "Dockerfile",
     },
     env: {
-      BACKEND_URL: `http://${backend.env.RAILWAY_PRIVATE_DOMAIN}:8080`,
+      BACKEND_URL: "http://phishing-awareness-platform.railway.internal:8080",
     },
   });
 
