@@ -29,6 +29,8 @@ public class GophishClient {
     private final String smtpHost;
     private final String smtpPort;
     private final String fromAddress;
+    private final String smtpUsername;
+    private final String smtpPassword;
 
     public GophishClient(@Value("${gophish.api-url:http://localhost:3333}") String apiUrl,
                          @Value("${gophish.api-key:}") String apiKey,
@@ -36,7 +38,9 @@ public class GophishClient {
                          @Value("${tracking.public-url:http://localhost}") String publicUrl,
                          @Value("${smtp.host:localhost}") String smtpHost,
                          @Value("${smtp.port:1025}") String smtpPort,
-                         @Value("${gophish.from-address:avisos@jovycandy.com}") String fromAddress) {
+                         @Value("${gophish.from-address:avisos@jovycandy.com}") String fromAddress,
+                         @Value("${smtp.username:}") String smtpUsername,
+                         @Value("${smtp.password:}") String smtpPassword) {
         this.webClient = WebClient.builder().baseUrl(apiUrl).build();
         this.apiKey = apiKey;
         this.gophishUrl = trimTrailingSlash(gophishUrl);
@@ -44,6 +48,8 @@ public class GophishClient {
         this.smtpHost = smtpHost;
         this.smtpPort = smtpPort;
         this.fromAddress = fromAddress;
+        this.smtpUsername = smtpUsername;
+        this.smtpPassword = smtpPassword;
     }
 
     public boolean isConfigured() {
@@ -79,7 +85,9 @@ public class GophishClient {
                 "host", smtpHost + ":" + smtpPort,
                 "from_address", fromAddress,
                 "interface_type", "SMTP",
-                "ignore_cert_errors", true
+                "ignore_cert_errors", true,
+                "username", smtpUsername,
+                "password", smtpPassword
         ));
 
         List<Map<String, Object>> targets = recipients.stream().map(cr -> {
