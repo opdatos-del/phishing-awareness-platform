@@ -1,10 +1,11 @@
-import { defineRailway, github, mysql, project, service, volume } from "railway/iac";
+import { defineRailway, github, mysql, preserve, project, service, volume } from "railway/iac";
 
 export default defineRailway(() => {
   const mysqlDb = mysql("MySQL", { region: "iad" });
   mysqlDb.deploy = { startCommand: "docker-entrypoint.sh mysqld --innodb-use-native-aio=0 --disable-log-bin --performance_schema=0 --innodb-buffer-pool-size=1G" };
   mysqlDb.networking = { privateNetworkEndpoint: "mysql" };
   const mysqlVolume = volume("mysql-volume", { allowOnlineResize: true, region: "iad", sizeMB: 500 });
+  const gophishVolume = volume("gophish-data", { region: "iad", sizeMB: 256 });
 
   const backend = service("phishing-awareness-platform", {
     source: github("opdatos-del/phishing-awareness-platform", {
@@ -35,6 +36,9 @@ export default defineRailway(() => {
       GOPHISH_API_URL: "http://gophish.railway.internal:3333",
       GOPHISH_API_KEY: "75ce3fd2903b280d5c0461e984e1f30dea95254d13584c0a8899fb0fd87d750a",
       GOPHISH_FROM_ADDRESS: "avisosjovycandy@gmail.com",
+      JWT_SECRET: preserve(),
+      SMTP_USERNAME: preserve(),
+      SMTP_PASSWORD: preserve(),
     },
   });
 
@@ -69,9 +73,12 @@ export default defineRailway(() => {
       restartPolicyType: "ON_FAILURE",
       restartPolicyMaxRetries: 3,
     },
+    volumeMounts: {
+      "/opt/gophish/data": gophishVolume,
+    },
   });
 
   return project("resplendent-appreciation", {
-    resources: [mysqlDb, frontend, backend, gophish, mysqlVolume],
+    resources: [mysqlDb, frontend, backend, gophish, mysqlVolume, gophishVolume],
   });
 });
