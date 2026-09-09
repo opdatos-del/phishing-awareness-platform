@@ -12,15 +12,62 @@ RUN pnpm run build
 # --- Runtime stage ---
 FROM nginx:alpine
 
-RUN apk add --no-cache gettext
-
 COPY --from=build /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/templates/default.conf.template
+COPY <<'EOF' /etc/nginx/conf.d/default.conf
+server {
+    listen 80;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
 
-ENV BACKEND_URL=http://backend:8080
-ENV BACKEND_HOST=backend
-ENV PORT=80
+    # Proxy API to backend
+    location /api/ {
+        proxy_pass http://backend:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    # Proxy tracking endpoints to backend
+    location /t/ {
+        proxy_pass http://backend:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    location /landing/ {
+        proxy_pass http://backend:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    location /training/ {
+        proxy_pass http://backend:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    # Proxy actuator to backend
+    location /actuator/ {
+        proxy_pass http://backend:8080;
+        proxy_set_header Host $host;
+    }
+
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # SPA fallback
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Security headers
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+}
+EOF
 
 EXPOSE 80
-
-CMD ["/bin/sh", "-c", "until getent hosts ${BACKEND_HOST} >/dev/null 2>&1; do echo waiting for backend DNS; sleep 2; done; /docker-entrypoint.sh nginx -g 'daemon off;'"]
