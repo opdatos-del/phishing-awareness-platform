@@ -4,12 +4,12 @@ import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YA
 import { api } from '../api'
 import type { AnalyticsInsights, Dashboard as DashboardData, TrendPoint } from '../api'
 import { Button, PageTitle, StatCard } from '../components/ui'
-import { Funnel } from '../components/OperationsVisuals'
+import { Funnel, SendingProgressBar } from '../components/OperationsVisuals'
 import { AnalyticsInsights as AnalyticsInsightsPanel } from '../components/AnalyticsInsights'
 import { ErrorState, Skeleton } from '../components/States'
 
 export default function Dashboard() {
-  const dashboard = useQuery<DashboardData>({ queryKey: ['dashboard'], queryFn: () => api.get('/dashboard').then(response => response.data) })
+  const dashboard = useQuery<DashboardData>({ queryKey: ['dashboard'], queryFn: () => api.get('/dashboard').then(response => response.data), refetchInterval: query => query.state.data?.activeCampaigns ? 15_000 : false })
   const trend = useQuery<TrendPoint[]>({ queryKey: ['trend'], queryFn: () => api.get('/analytics/trend').then(response => response.data) })
   const insights = useQuery<AnalyticsInsights>({ queryKey: ['analytics-insights'], queryFn: () => api.get('/analytics/insights').then(response => response.data) })
 
@@ -19,6 +19,8 @@ export default function Dashboard() {
   const data = dashboard.data
   const rate = (value: number) => data.totalSent ? Math.round(value * 10000 / data.totalSent) / 100 : 0
   const stats = {
+    totalRecipients: data.totalSent, sentSoFar: data.totalSent, percent: 100,
+    schedulingActive: false, etaMinutes: 0,
     totalSent: data.totalSent, totalOpened: data.totalOpened, totalClicked: data.totalClicked,
     totalSubmitted: data.totalSubmitted, totalReported: data.totalReported,
     totalTrainingViewed: data.totalTrainingViewed, totalTrainingCompleted: data.totalTrainingCompleted,
@@ -34,6 +36,7 @@ export default function Dashboard() {
       <StatCard label="Envíos de formulario" value={data.totalSubmitted} note={`${rate(data.totalSubmitted)}% de enviados`} />
       <StatCard label="Formación completada" value={data.totalTrainingCompleted} note="Personas que cerraron ciclo" />
     </div>
+    {data.activeSendingCampaigns.length ? <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6"><div className="flex flex-wrap items-baseline justify-between gap-2"><div><h2 className="font-serif text-2xl text-[#102a43]">Envíos en curso</h2><p className="mt-1 text-sm text-slate-500">Avance confirmado por eventos de envío.</p></div><span className="text-sm font-semibold text-slate-600">{data.activeSendingCampaigns.length} activa{data.activeSendingCampaigns.length === 1 ? '' : 's'}</span></div><div className="mt-5 grid gap-5">{data.activeSendingCampaigns.map(campaign => <Link key={campaign.id} to={`/campaigns/${campaign.id}`} className="block rounded-xl p-2 transition hover:bg-slate-50"><SendingProgressBar progress={campaign} compact /></Link>)}</div></section> : null}
     <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_1fr]">
       <Funnel stats={stats} />
       <section className="rounded-2xl border border-slate-200 bg-white p-6">

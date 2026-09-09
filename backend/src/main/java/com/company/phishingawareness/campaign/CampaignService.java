@@ -211,7 +211,8 @@ public class CampaignService {
     public record CreateRequest(String name, String description, Long templateId, Long landingPageId) {}
     public record UpdateRequest(String name, String description, Long templateId, Long landingPageId) {}
     public record BatchAddRecipientsRequest(List<Long> recipientIds) {}
-    public record CampaignStats(long totalSent, long totalOpened, long totalClicked, long totalSubmitted,
+    public record CampaignStats(long totalRecipients, long sentSoFar, double percent, boolean schedulingActive,
+                                long etaMinutes, long totalSent, long totalOpened, long totalClicked, long totalSubmitted,
                                 long totalReported, long totalTrainingViewed, long totalTrainingCompleted,
                                 double openRate, double clickRate, double submitRate, double trainingRate) {}
     public record EventResponse(Long id, String type, java.time.LocalDateTime eventTime,
@@ -222,10 +223,13 @@ public class CampaignService {
                                       java.time.LocalDateTime createdAt, java.time.LocalDateTime scheduledAt,
                                       java.time.LocalDateTime startedAt, long totalSent, long totalOpened,
                                       long totalClicked, long totalSubmitted, long totalTrainingCompleted) {}
+    public record ActiveCampaignProgress(Long id, String name, long totalRecipients, long sentSoFar,
+                                         double percent, boolean schedulingActive, long etaMinutes) {}
     public record DashboardSummary(long activeCampaigns, long totalCampaigns, long totalSent, long totalOpened,
                                    long totalClicked, long totalSubmitted, long totalReported, long totalTrainingViewed,
                                    long totalTrainingCompleted,
-                                   List<CampaignSummary> recentCampaigns) {}
+                                   List<CampaignSummary> recentCampaigns,
+                                   List<ActiveCampaignProgress> activeSendingCampaigns) {}
     public record LaunchRequest(java.time.OffsetDateTime scheduledAt, Integer durationMinutes) {}
 
     @Transactional
@@ -252,7 +256,7 @@ public class CampaignService {
             campaign.setScheduledAt(scheduledAtUtc);
             campaign.setStatus(Campaign.Status.SCHEDULED);
         } else {
-            markRunning(campaign, recipients);
+            markRunning(campaign);
         }
         return campaignRepo.save(campaign);
     }
@@ -261,7 +265,7 @@ public class CampaignService {
     public void activateScheduledCampaigns() {
         java.time.LocalDateTime now = java.time.LocalDateTime.now();
         campaignRepo.findByStatusAndScheduledAtLessThanEqual(Campaign.Status.SCHEDULED, now)
-                .forEach(campaign -> markRunning(campaign, crRepo.findByCampaignId(campaign.getId())));
+                .forEach(this::markRunning);
         campaignRepo.findByStatusAndSendByAtLessThanEqual(Campaign.Status.RUNNING, now)
                 .forEach(campaign -> {
                     campaign.setStatus(Campaign.Status.COMPLETED);
@@ -275,33 +279,23 @@ public class CampaignService {
                 });
     }
 
-    private void markRunning(Campaign campaign, List<CampaignRecipient> recipients) {
+    private void markRunning(Campaign campaign) {
         java.time.LocalDateTime now = java.time.LocalDateTime.now();
         campaign.setStatus(Campaign.Status.RUNNING);
         campaign.setStartedAt(now);
-        campaign.setSentAt(now);
-        for (CampaignRecipient cr : recipients) {
-            if (cr.getSentAt() == null) {
-                cr.setSentAt(now);
-                crRepo.save(cr);
-                CampaignEvent event = new CampaignEvent();
-                event.setCampaignRecipient(cr);
-                event.setEventType(CampaignEvent.EventType.EMAIL_SENT);
-                event.setEventTime(now);
-                eventRepo.save(event);
-            }
-        }
     }
 
     @Transactional(readOnly = true)
     public CampaignStats stats(Long id) {
-        findById(id);
+        Campaign campaign = findById(id);
+        long totalRecipients = crRepo.countByCampaignId(id);
         long sent = crRepo.countByCampaignIdAndSentAtIsNotNull(id);
         long opened = crRepo.countByCampaignIdAndOpenedAtIsNotNull(id);
         long clicked = crRepo.countByCampaignIdAndClickedAtIsNotNull(id);
         long submitted = crRepo.countByCampaignIdAndSubmittedAtIsNotNull(id);
         long completed = crRepo.countByCampaignIdAndTrainingCompletedAtIsNotNull(id);
-        return new CampaignStats(sent, opened, clicked, submitted,
+        return new CampaignStats(totalRecipients, sent, percent(sent, totalRecipients),
+                schedulingActive(campaign), etaMinutes(campaign), sent, opened, clicked, submitted,
                 crRepo.countByCampaignIdAndReportedAtIsNotNull(id),
                 crRepo.countByCampaignIdAndTrainingViewedAtIsNotNull(id), completed,
                 rate(opened, sent), rate(clicked, sent), rate(submitted, sent), rate(completed, sent));
@@ -322,15 +316,40 @@ public class CampaignService {
         List<CampaignSummary> recent = campaignRepo.findTop5ByOrderByCreatedAtDesc().stream()
                 .map(c -> new CampaignSummary(c.getId(), c.getName(), c.getStatus().name(), c.getCreatedAt()))
                 .toList();
-        return new DashboardSummary(campaignRepo.countByStatus(Campaign.Status.RUNNING), campaignRepo.count(),
+        List<ActiveCampaignProgress> activeSendingCampaigns = campaignRepo.findByStatus(Campaign.Status.RUNNING).stream()
+                .map(campaign -> progress(campaign, crRepo.countByCampaignId(campaign.getId()),
+                        crRepo.countByCampaignIdAndSentAtIsNotNull(campaign.getId())))
+                .toList();
+        return new DashboardSummary(activeSendingCampaigns.size(), campaignRepo.count(),
                 crRepo.countBySentAtIsNotNull(), crRepo.countByOpenedAtIsNotNull(),
                 crRepo.countByClickedAtIsNotNull(), crRepo.countBySubmittedAtIsNotNull(),
                 crRepo.countByReportedAtIsNotNull(), crRepo.countByTrainingViewedAtIsNotNull(),
-                crRepo.countByTrainingCompletedAtIsNotNull(), recent);
+                crRepo.countByTrainingCompletedAtIsNotNull(), recent, activeSendingCampaigns);
     }
 
     private static double rate(long numerator, long denominator) {
         return denominator == 0 ? 0 : Math.round(numerator * 10000.0 / denominator) / 100.0;
+    }
+
+    private static double percent(long sent, long totalRecipients) {
+        return rate(sent, totalRecipients);
+    }
+
+    private static boolean schedulingActive(Campaign campaign) {
+        return campaign.getStatus() == Campaign.Status.RUNNING
+                && campaign.getSendByAt() != null
+                && campaign.getSendByAt().isAfter(java.time.LocalDateTime.now());
+    }
+
+    private static long etaMinutes(Campaign campaign) {
+        if (!schedulingActive(campaign)) return 0;
+        long seconds = java.time.Duration.between(java.time.LocalDateTime.now(), campaign.getSendByAt()).toSeconds();
+        return Math.max(1, (long) Math.ceil(seconds / 60.0));
+    }
+
+    private static ActiveCampaignProgress progress(Campaign campaign, long totalRecipients, long sentSoFar) {
+        return new ActiveCampaignProgress(campaign.getId(), campaign.getName(), totalRecipients, sentSoFar,
+                percent(sentSoFar, totalRecipients), schedulingActive(campaign), etaMinutes(campaign));
     }
 
     public record CampaignRecipientResponse(
