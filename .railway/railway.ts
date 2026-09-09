@@ -55,6 +55,7 @@ export default defineRailway(() => {
     },
     env: {
       BACKEND_URL: "http://phishing-awareness-platform.railway.internal:8080",
+      BACKEND_HOST: "phishing-awareness-platform.railway.internal",
     },
   });
 
