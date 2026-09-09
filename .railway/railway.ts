@@ -1,85 +1,65 @@
-import { defineRailway, github, mysql, preserve, project, service, volume } from "railway/iac";
+import { defineRailway, github, image, preserve, project, service, volume } from "railway/iac";
 
 export default defineRailway(() => {
-  const mysqlDb = mysql("MySQL", { region: "iad" });
-  mysqlDb.deploy = { startCommand: "docker-entrypoint.sh mysqld --innodb-use-native-aio=0 --disable-log-bin --performance_schema=0 --innodb-buffer-pool-size=1G" };
-  mysqlDb.networking = { privateNetworkEndpoint: "mysql" };
-  const mysqlVolume = volume("mysql-volume", { allowOnlineResize: true, region: "iad", sizeMB: 500 });
-  const gophishVolume = volume("gophish-data", { region: "iad", sizeMB: 256 });
+  const mysqlData = volume("mysql-data", { region: "iad", sizeMB: 500 });
+  const gophishData = volume("gophish-data", { region: "iad", sizeMB: 256 });
 
-  const backend = service("phishing-awareness-platform", {
-    source: github("opdatos-del/phishing-awareness-platform", {
-      branch: "main",
-      checkSuites: false,
-      rootDirectory: "backend",
-    }),
+  const frontend = service("frontend", {
+    source: github("opdatos-del/phishing-awareness-platform", { checkSuites: false, rootDirectory: "frontend" }),
+    build: { buildEnvironment: "V3", builder: "DOCKERFILE", dockerfilePath: "Dockerfile" },
     replicas: { "iad": 1 },
-    build: {
-      builder: "DOCKERFILE",
-      dockerfilePath: "Dockerfile",
-    },
-    deploy: {
-      healthcheckPath: "/actuator/health",
-      healthcheckTimeout: 300,
-      restartPolicyType: "ON_FAILURE",
-      restartPolicyMaxRetries: 3,
-    },
     env: {
-      DB_HOST: mysqlDb.env.MYSQLHOST,
-      DB_PORT: mysqlDb.env.MYSQLPORT,
-      DB_NAME: mysqlDb.env.MYSQLDATABASE,
-      DB_USERNAME: mysqlDb.env.MYSQLUSER,
-      DB_PASSWORD: mysqlDb.env.MYSQLPASSWORD,
-      SMTP_HOST: "smtp.gmail.com",
-      SMTP_PORT: "587",
-      GOPHISH_URL: "http://gophish.railway.internal:3333",
-      GOPHISH_API_URL: "http://gophish.railway.internal:3333",
-      GOPHISH_API_KEY: "75ce3fd2903b280d5c0461e984e1f30dea95254d13584c0a8899fb0fd87d750a",
-      GOPHISH_FROM_ADDRESS: "avisosjovycandy@gmail.com",
-      JWT_SECRET: preserve(),
-      SMTP_USERNAME: preserve(),
-      SMTP_PASSWORD: preserve(),
+      BACKEND_HOST: "phishing-awareness-platform.railway.internal",
+      BACKEND_URL: "http://phishing-awareness-platform.railway.internal:8080",
     },
   });
 
-  const frontend = service("frontend", {
-    source: github("opdatos-del/phishing-awareness-platform", {
-      branch: "main",
-      checkSuites: false,
-      rootDirectory: "frontend",
-    }),
+  const phishingAwarenessPlatform = service("phishing-awareness-platform", {
+    source: github("opdatos-del/phishing-awareness-platform", { checkSuites: false, rootDirectory: "backend" }),
+    build: { buildEnvironment: "V3", builder: "DOCKERFILE", dockerfilePath: "Dockerfile" },
+    healthcheck: "/actuator/health",
+    healthcheckTimeout: 300,
     replicas: { "iad": 1 },
-    build: {
-      builder: "DOCKERFILE",
-      dockerfilePath: "Dockerfile",
-    },
+    deploy: { restartPolicyMaxRetries: 3 },
     env: {
-      BACKEND_URL: "http://phishing-awareness-platform.railway.internal:8080",
-      BACKEND_HOST: "phishing-awareness-platform.railway.internal",
+      DB_HOST: "db-mysql.railway.internal",
+      DB_NAME: "phishing_awareness",
+      DB_PASSWORD: preserve(),
+      DB_PORT: "3306",
+      DB_USERNAME: "phishing_app",
+      GOPHISH_API_KEY: "75ce3fd2903b280d5c0461e984e1f30dea95254d13584c0a8899fb0fd87d750a",
+      GOPHISH_API_URL: "http://gophish.railway.internal:3333",
+      GOPHISH_FROM_ADDRESS: "avisosjovycandy@gmail.com",
+      GOPHISH_URL: "http://gophish.railway.internal:3333",
+      JWT_SECRET: preserve(),
+      SMTP_HOST: "smtp.gmail.com",
+      SMTP_PASSWORD: preserve(),
+      SMTP_PORT: "587",
+      SMTP_USERNAME: preserve(),
     },
   });
 
   const gophish = service("gophish", {
-    source: github("opdatos-del/phishing-awareness-platform", {
-      branch: "main",
-      checkSuites: false,
-      rootDirectory: "infrastructure/gophish",
-    }),
+    source: github("opdatos-del/phishing-awareness-platform", { checkSuites: false, rootDirectory: "infrastructure/gophish" }),
+    build: { buildEnvironment: "V3", builder: "DOCKERFILE", dockerfilePath: "Dockerfile.railway" },
     replicas: { "iad": 1 },
-    build: {
-      builder: "DOCKERFILE",
-      dockerfilePath: "Dockerfile.railway",
+    deploy: { restartPolicyMaxRetries: 3 },
+    volumeMounts: { "/opt/gophish/data": gophishData },
+  });
+
+  const mysqlApp = service("db-mysql", {
+    source: image("mysql:8.0"),
+    replicas: { "iad": 1 },
+    env: {
+      MYSQL_DATABASE: "phishing_awareness",
+      MYSQL_PASSWORD: preserve(),
+      MYSQL_ROOT_PASSWORD: preserve(),
+      MYSQL_USER: "phishing_app",
     },
-    deploy: {
-      restartPolicyType: "ON_FAILURE",
-      restartPolicyMaxRetries: 3,
-    },
-    volumeMounts: {
-      "/opt/gophish/data": gophishVolume,
-    },
+    volumeMounts: { "/var/lib/mysql": mysqlData },
   });
 
   return project("resplendent-appreciation", {
-    resources: [mysqlDb, frontend, backend, gophish, mysqlVolume, gophishVolume],
+    resources: [frontend, phishingAwarenessPlatform, gophish, mysqlApp, mysqlData, gophishData],
   });
 });

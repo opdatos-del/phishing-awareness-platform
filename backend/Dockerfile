@@ -22,6 +22,4 @@ COPY --from=build /app/build/libs/*.jar app.jar
 
 EXPOSE 8080
 
-ENV JAVA_TOOL_OPTIONS=-Djava.net.preferIPv6Addresses=true
-
 ENTRYPOINT ["java", "-jar", "app.jar"]
